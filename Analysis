@@ -3696,7 +3696,6 @@ for(i in 1:length(zz)){
     saveCat_obsTemp = rbind(saveCat_obsTemp, curCatWarm)
   }
 }
-
 for(i in 1:length(zz)){
   curDat = all_daily_data[all_daily_data$Station == zz[i],]
   ts_Warm = ts2clm(curDat, x = date, y = noTide_corTemp,
@@ -3715,7 +3714,6 @@ for(i in 1:length(zz)){
     saveCat_noTide_corTemp = rbind(saveCat_noTide_corTemp, curCatWarm)
   }
 }
-
 for(i in 1:length(zz)){
   curDat = all_daily_data[all_daily_data$Station == zz[i],]
   ts_Cold = ts2clm(curDat, x = date, y = obsDO,
@@ -3734,7 +3732,6 @@ for(i in 1:length(zz)){
     saveCat_obsDO = rbind(saveCat_obsDO, curCatCold)
   }
 }
-
 for(i in 1:length(zz)){
   curDat = all_daily_data[all_daily_data$Station == zz[i],]
   ts_Cold = ts2clm(curDat, x = date, y = noTide_corDO,
@@ -3753,7 +3750,6 @@ for(i in 1:length(zz)){
     saveCat_noTide_corDO = rbind(saveCat_noTide_corDO, curCatCold)
   }
 }
-
 for(i in 1:length(zz)){
   curDat = all_daily_data[all_daily_data$Station == zz[i],]
   ts_Cold = ts2clm(curDat, x = date, y = obsPH,
@@ -3772,7 +3768,6 @@ for(i in 1:length(zz)){
     saveCat_obsPH = rbind(saveCat_obsPH, curCatCold)
   }
 }
-
 for(i in 1:length(zz)){
   curDat = all_daily_data[all_daily_data$Station == zz[i],]
   ts_Cold = ts2clm(curDat, x = date, y = noTide_corPH,
@@ -3829,58 +3824,67 @@ all_table$Order <- c(11,13,14,8,6,7,16,17,
                      2,3,4,12,5,9,10,15,1)
 all_table <- all_table[,c(11,1:10)]
 
-# saveDat_obsTemp$class <- "Observed"
-# saveDat_obsDO$class <- "Observed"
-# saveDat_obsPH$class <- "Observed"
-# saveDat_noTide_corTemp$class <- "noTide"
-# saveDat_noTide_corDO$class <- "noTide"
-# saveDat_noTide_corPH$class <- "noTide"
-# hw_dat <- rbind(saveDat_obsTemp,saveDat_noTide_corTemp)
-# do_dat <- rbind(saveDat_obsDO,saveDat_noTide_corDO)
-# ph_dat <- rbind(saveDat_obsPH,saveDat_noTide_corPH)
-# 
-# ggplot(hw_dat, aes(x=duration, color=class, fill = class)) +
-#   geom_histogram(position = "dodge") +
-#   labs(y = "HW Count", x = "Duration (days)") +
-#   scale_color_brewer(palette = "Set1") +
-#   facet_wrap("Station") + 
-#   theme_classic() +
-#   theme(legend.title = element_blank(),
-#         legend.position = "top")
-# 
-# ggplot(do_dat, aes(x=duration, color=class, fill = class)) +
-#   geom_histogram(position = "dodge") +
-#   labs(y = "low DO Count", x = "Duration (days)") +
-#   scale_color_brewer(palette = "Set1") +
-#   facet_wrap("Station") + 
-#   theme_classic() +
-#   theme(legend.title = element_blank(),
-#         legend.position = "top")
-# 
-# ggplot(ph_dat, aes(x=duration, color=class, fill = class)) +
-#   geom_histogram(position = "dodge") +
-#   labs(y = "low pH Count", x = "Duration (days)") +
-#   scale_color_brewer(palette = "Set1") +
-#   facet_wrap("Station") + 
-#   theme_classic() +
-#   theme(legend.title = element_blank(),
-#         legend.position = "top")
-# 
-# de_hw_obsTemp <- de_Warm_obsTemp$event
-# de_hw_noTide_Temp <- de_Warm_noTide_corTemp$event
-# de_hw_obsTemp$class <- "Observed"
-# de_hw_noTide_Temp$class <- "noTide"
-# de_hw <- rbind(de_hw_obsTemp, de_hw_noTide_Temp)
-# 
-# ggplot(de_hw, aes(x = date_peak, y = duration)) +
-#   geom_lolli(aes(color = class)) +
-#   labs(x = "Peak Date",
-#        y = "Event Duration (days)") +
-#   theme_bw() +
-#   theme(panel.grid = element_blank(),
-#         text = element_text(size = 12),
-#         axis.text.x = element_text(size = 12, color = "black"),
-#         axis.text.y = element_text(size = 12, color = "black"))
+######
+
+saveDat_obsTemp$class <- "Observed"
+saveDat_obsDO$class <- "Observed"
+saveDat_obsPH$class <- "Observed"
+saveDat_noTide_corTemp$class <- "Tide Removed"
+saveDat_noTide_corDO$class <- "Tide Removed"
+saveDat_noTide_corPH$class <- "Tide Removed"
+hw_dat <- rbind(saveDat_obsTemp,saveDat_noTide_corTemp)
+do_dat <- rbind(saveDat_obsDO,saveDat_noTide_corDO)
+ph_dat <- rbind(saveDat_obsPH,saveDat_noTide_corPH)
+
+cols <- c("Observed" = "#000000", "noTide" = "#ffffff")
+
+ggplot(hw_dat, aes(x=duration, color=class, fill = class)) +
+  geom_histogram(position = "dodge", color = "black") +
+  labs(y = "Total Estuarine Heatwave Events", x = "Duration (days)") +
+  scale_fill_manual(values = cols) +
+  facet_wrap("Station") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        text = element_text(size = 14),
+        axis.text.x = element_text(size = 12, color = "black", angle = 45, vjust = 1, hjust = 1),
+        axis.text.y = element_text(size = 12, color = "black"),
+        legend.key.size = unit(0.8,"line"),
+        legend.title = element_blank(),
+        legend.direction = "vertical",
+        legend.position = c(0.11,0.97),
+        legend.background = element_blank())
+
+ggplot(do_dat, aes(x=duration, color=class, fill = class)) +
+  geom_histogram(position = "dodge", color = "black") +
+  labs(y = "Total Low DO Events", x = "Duration (days)") +
+  scale_fill_manual(values = cols) +
+  facet_wrap("Station") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        text = element_text(size = 14),
+        axis.text.x = element_text(size = 12, color = "black", angle = 45, vjust = 1, hjust = 1),
+        axis.text.y = element_text(size = 12, color = "black"),
+        legend.key.size = unit(0.8,"line"),
+        legend.title = element_blank(),
+        legend.direction = "vertical",
+        legend.position = c(0.11,0.97),
+        legend.background = element_blank())
+
+ggplot(ph_dat, aes(x=duration, color=class, fill = class)) +
+  geom_histogram(position = "dodge", color = "black") +
+  labs(y = "Total Low pH Events", x = "Duration (days)") +
+  scale_fill_manual(values = cols) +
+  facet_wrap("Station") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        text = element_text(size = 14),
+        axis.text.x = element_text(size = 12, color = "black", angle = 45, vjust = 1, hjust = 1),
+        axis.text.y = element_text(size = 12, color = "black"),
+        legend.key.size = unit(0.8,"line"),
+        legend.title = element_blank(),
+        legend.direction = "vertical",
+        legend.position = c(0.11,0.97),
+        legend.background = element_blank())
 
 ######
 
@@ -4105,7 +4109,31 @@ Table1$Region <- c("SE","GoM","GoM","MidAtl","MidAtl","MidAtl","West","West","NE
                    "NE","NE","SE","NE","SE","SE","West","NE")
 Table1 <- Table1[,c(7,2,17,3:6,8:16)]
 Table1 <- Table1 %>% arrange(-desc(Order))
-View(Table1)
+colnames(Table1) <- c("Order","Station","Region","Salinity_mean","Salinity_SD",
+                    "Depth_mean","TidalRange_mean","Total_EHW","Total_EHW(NoTide)",
+                    "EHW_Diff","Total_LowDO","Total_LowDO(NoTide)","LowDO_Diff",
+                    "Total_LowPH","Total_LowPH(NoTide)","LowPH_Diff")
+Table1_small <- Table1[,c(1:3,8:16)]
+Table1_small$Reserve <- substr(Table1_small$Station,0,3)
+Table1_small <- Table1_small[,c(1,13,2:12)]
+
+Table1_small %>%
+  ggplot(aes(x = Total_EHW, y = `Total_EHW(NoTide)`)) +
+  stat_smooth(method = 'lm', color = "black") +
+  geom_point(aes(color = Reserve)) +
+  theme_bw() +
+  theme(panel.grid = element_blank())
+
+ehw_lm <- lm(Table1_small$`Total_EHW(NoTide)`~Table1_small$Total_EHW)
+do_lm <- lm(Table1_small$`Total_LowDO(NoTide)`~Table1_small$Total_LowDO)
+ph_lm <- lm(Table1_small$`Total_LowPH(NoTide)`~Table1_small$Total_LowPH)
+summary(ehw_lm)
+summary(do_lm)
+summary(ph_lm)
+
+t.test(Table1_small$Total_EHW,Table1_small$`Total_EHW(NoTide)`,paired = TRUE)
+t.test(Table1_small$Total_LowDO,Table1_small$`Total_LowDO(NoTide)`,paired = TRUE)
+t.test(Table1_small$Total_LowPH,Table1_small$`Total_LowPH(NoTide)`,paired = TRUE)
 
 ### Replace mean salinity NA values with mean of station salinity
 
@@ -7103,6 +7131,30 @@ Fig3_table %>%
   annotate("text", x = c(2.5,5.5,8,10,11.5), y = -10, label = c("Northeast", "Mid. Atl.", "Southeast","GoM","West"), size = 5) +
   annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = -3.5, yend = -12.75)
 
+ahwMHW <- df_AHWMHW
+ahwMHW$Region[ahwMHW$Reserve%in%c("wel","grb","hud","nar")] <- "NE"
+ahwMHW$Region[ahwMHW$Reserve%in%c("del","cbv")] <- "MidAtl"
+ahwMHW$Region[ahwMHW$Reserve%in%c("noc","ace","job")] <- "SE"
+ahwMHW$Region[ahwMHW$Reserve%in%"apa"] <- "GoM"
+ahwMHW$Region[ahwMHW$Reserve%in%c("pdb","elk")] <- "West"
+
+round(mean(ahwMHW$Proportion_CoOccurrance),0)
+min(ahwMHW$Proportion_CoOccurrance)
+max(ahwMHW$Proportion_CoOccurrance)
+ahwMHW %>%
+  group_by(Region) %>%
+  summarise(Mean = round(mean(Proportion_CoOccurrance),0),
+            SD = round(sd(Proportion_CoOccurrance),0))
+df_mhwDO %>%
+  summarise(Mean = round(mean(Proportion_CoOccurrance),0),
+            SD = round(sd(Proportion_CoOccurrance),0))
+df_mhwPH %>%
+  summarise(Mean = round(mean(Proportion_CoOccurrance),0),
+            SD = round(sd(Proportion_CoOccurrance),0))
+df_triple %>%
+  summarise(Mean = round(mean(Proportion_CoOccurrance),0),
+            SD = round(sd(Proportion_CoOccurrance),0))
+
 ### Figure 4: Exported image as width = 750 height = 650
 ### Determine number of offset days between ATM HW and Aquatic HW
 
@@ -8534,6 +8586,16 @@ Fig4_table %>%
   annotate("text", x = c(2.5,5.5,8,10,11.5), y = -1.15, label = c("Northeast", "Mid. Atl.","Southeast","GoM","West"), size = 5) +
   annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = -0.4, yend = -1.5)
 
+all_sites %>%
+  summarise(lower = min(Avg.),
+            upper = max(Avg.))
+all_sites_do %>%
+  summarise(Mean = mean(Avg.),
+            SD = round(sd(Avg.),0))
+all_sites_pH %>%
+  summarise(Mean = round(mean(Avg., na.rm = TRUE),0),
+            SD = round(sd(Avg., na.rm = TRUE),0))
+
 # Figure 5: Exported image as width = 750 height = 650
 
 df1 <- cbind(saveDatWarm,saveCatWarm[,c(3:5,11:12)])
@@ -8665,6 +8727,10 @@ Fig5_table %>%
   coord_cartesian(clip = "off", ylim = c(0, NA)) +
   annotate("text", x = c(2.5,5.5,8,10,11.5), y = -13, label = c("Northeast", "Mid. Atl.", "Southeast","GoM","West"), size = 5) +
   annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = -4.6, yend = -17)
+
+AHW_table %>%
+  summarise(Mean = round(mean(NumAHW_Events),0),
+            SD = round(sd(NumAHW_Events),0))
 
 ### Table 2: 10% False Discovery Rate (FDR: http://www.biostathandbook.com/multiplecomparisons.html)
 
@@ -9794,6 +9860,11 @@ mean_SD_table <- mean_SD_table[,c(5,7,6,1:4)]
 SI_Fig1A <- rbind(mean_Atemp_table,mean_SD_table)
 SI_Fig1A$upper <- round(SI_Fig1A$upper,2)
 SI_Fig1A$lower <- round(SI_Fig1A$lower,2)
+
+SI_Fig1A %>%
+  group_by(Type) %>%
+  summarise(Max = max(MeanSlope),
+            Min = min(MeanSlope))
 
 #SI_Fig1B: Estuarine water temperature trends
 
