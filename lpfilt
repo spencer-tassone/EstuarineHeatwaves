@@ -1,7 +1,7 @@
 #  Peforms low-pass filtering by multiplication in frequency domain using
 #  a 3-point taper (in frequency space) between pass-band and stop band.
 #  Coefficients suggested by D. Coats, Battelle, Ventura.
-#  Written by Chris Sherwood, 1989; revised by Patricia Wiberg, 2003.
+#  Written by Chris Sherwood, 1999 (https://github.com/csherwood-usgs/FI_processing/blob/master/lpfilt.m); revised by Patricia Wiberg, 2003.
 
 lpfilt = function(data,delta_t,cutoff_f) {
 n=length(data)
