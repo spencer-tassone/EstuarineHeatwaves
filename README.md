@@ -1,6 +1,8 @@
 # EstuarineHeatwaves
 Co-occurrence of aquatic heatwaves with atmospheric heatwaves, low dissolved oxygen, and low pH events in estuarine ecosystems. In Review @ Estuaries and Coasts.
-Authors: Spencer J. Tassone, Alice F. Besterman, Cal D. Buelo, Jonathan A. Walter, Michael L. Pace
+
+Authors: Spencer J. Tassone*, Alice F. Besterman, Cal D. Buelo, Jonathan A. Walter, Michael L. Pace
+*Contact author: sjt7jc@virginia.edu
 
 # The heat wave metrics: https://github.com/ajsmit/RmarineHeatWaves/blob/master/README.Rmd
 
