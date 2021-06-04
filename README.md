@@ -44,3 +44,8 @@ The events are summarised using a range of event metrics:
 We used `int_cum_rel_thresh` in our analysis which have the same units as above and are relative to the threshold (e.g., 90th percentile) rather than the seasonal climatology.
 
 Note that `rate_onset` and `rate_decline` will return `NA` when the event begins/ends on the first/last day of the time series or if there is a gap in the timeseries. Although the other metrics do not contain any errors and provide sensible values, please take this into account in its interpretation.
+
+
+# Low pass filtering to remove influence of tides on estuarine water temperature, dissolved oxygen, and pH time series
+
+Per suggestion by a reviewer, we examined the influence of tides on the high-frequency (15 and 30 min. interval) estuarine water temperature, dissolved oxygen, and pH data. We did this by running the high frequency data through a low-pass filter prior to calculating daily averages (another type of low pass filtering) which we used in the extreme event detection algorithm 'heatwaveR'. All the code for this analaysis is in the 'Analysis' branch of this repository. In the code, there are two functions that are used to conduct the low pass filter: 1) lpfilt and 2)specclc. Each of these functions is in their own branch labelled as 'lpfilt' and 'specclc'. The low pass filtered data had small, random influence on the direction of the number of estuarine heatwaves, low DO, and low pH events, so we, the authors decided that to be consistent with other studies that have used 'heatwaveR' before, we would ***not*** use the low pass filtered data in this manuscript. We do provide some comparison of results in the supplemental information of the manuscript.
