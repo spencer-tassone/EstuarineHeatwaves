@@ -2,9 +2,11 @@
 Co-occurrence of aquatic heatwaves with atmospheric heatwaves, low dissolved oxygen, and low pH events in estuarine ecosystems. In Review @ Estuaries and Coasts.
 
 Authors: Spencer J. Tassone*, Alice F. Besterman, Cal D. Buelo, Jonathan A. Walter, Michael L. Pace
+
 *Contact author: sjt7jc@virginia.edu
 
-# The heat wave metrics: https://github.com/ajsmit/RmarineHeatWaves/blob/master/README.Rmd
+# The heat wave metrics
+Table below and most text comes from: https://github.com/ajsmit/RmarineHeatWaves/blob/master/README.Rmd
 
 The function will return a list of two tibbles (see the 'tidyverse'), `clim` and `event`, which are the climatology and MHW (or MCS) events, respectively. The climatology contains the full time series of daily temperatures, as well as the the seasonal climatology, the threshold and various aspects of the events that were detected. The software was designed for detecting extreme thermal events, and the units specified below reflect that intended purpose. However, the various other kinds of extreme events may be detected according to the 'marine heat wave' specifications, and if that is the case, the appropriate units need to be determined by the user.
 
