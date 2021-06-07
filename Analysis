@@ -10050,6 +10050,7 @@ SI_Fig1b <- SI_Fig1B %>%
   mutate(Reserve = factor(Reserve, levels = c("wel","grb","hud","nar","del","cbv","noc","ace","job","apa","pdb","elk"))) %>%
   ggplot(aes(x = Reserve, y = MeanSlope)) +
   geom_col(aes(fill = Type), position = "dodge", color = "black") +
+  geom_errorbar(aes(fill = Type, ymin = lower, ymax = upper), position = "dodge", width = 0.9, color = "black") +
   scale_fill_manual(values = cols) +
   labs(y=expression(paste("Slope (°C  ", yr^-1,")")),
        x = "NERRS Reserves & Regions") +
