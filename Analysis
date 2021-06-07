@@ -3940,6 +3940,16 @@ SalDat_DailyAVG <- all_HFdat %>%
   group_by(Station, DateFormatted) %>%
   summarise(MeanSal = round(mean(Sal, na.rm = TRUE),1))
 
+DO_DailyMin <- all_HFdat %>%
+  group_by(Station, DateFormatted) %>%
+  summarise(MinDO = round(min(DO_mgl, na.rm = TRUE),1)) %>%
+  mutate(MinDO = ifelse(is.infinite(MinDO), NA, MinDO))
+
+PH_DailyMin <- all_HFdat %>%
+  group_by(Station, DateFormatted) %>%
+  summarise(MinPH = round(min(pH, na.rm = TRUE),1)) %>%
+  mutate(MinPH = ifelse(is.infinite(MinPH), NA, MinPH))
+
 ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsTemp$Station,  saveDat_obsTemp$date_start, saveDat_obsTemp$date_end, USE.NAMES = TRUE)
 saveDat_obsTemp$MeanSalinity <- mapply(function(a, b)
   mean(SalDat_DailyAVG$MeanSal[SalDat_DailyAVG$Station == b][match(a, SalDat_DailyAVG$DateFormatted[SalDat_DailyAVG$Station == b])]), ranges, names(ranges))
@@ -3949,6 +3959,32 @@ saveDat_obsDO$MeanSalinity <- mapply(function(a, b)
 ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsPH$Station,  saveDat_obsPH$date_start, saveDat_obsPH$date_end, USE.NAMES = TRUE)
 saveDat_obsPH$MeanSalinity <- mapply(function(a, b)
   mean(SalDat_DailyAVG$MeanSal[SalDat_DailyAVG$Station == b][match(a, SalDat_DailyAVG$DateFormatted[SalDat_DailyAVG$Station == b])]), ranges, names(ranges))
+
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsTemp$Station,  saveDat_obsTemp$date_start, saveDat_obsTemp$date_end, USE.NAMES = TRUE)
+saveDat_obsTemp$MinDO <- mapply(function(a, b)
+  min(DO_DailyMin$MinDO[DO_DailyMin$Station == b][match(a, DO_DailyMin$DateFormatted[DO_DailyMin$Station == b])]), ranges, names(ranges))
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsDO$Station,  saveDat_obsDO$date_start, saveDat_obsDO$date_end, USE.NAMES = TRUE)
+saveDat_obsDO$MinDO <- mapply(function(a, b)
+  min(DO_DailyMin$MinDO[DO_DailyMin$Station == b][match(a, DO_DailyMin$DateFormatted[DO_DailyMin$Station == b])]), ranges, names(ranges))
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsPH$Station,  saveDat_obsPH$date_start, saveDat_obsPH$date_end, USE.NAMES = TRUE)
+saveDat_obsPH$MinDO <- mapply(function(a, b)
+  min(DO_DailyMin$MinDO[DO_DailyMin$Station == b][match(a, DO_DailyMin$DateFormatted[DO_DailyMin$Station == b])]), ranges, names(ranges))
+
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsTemp$Station,  saveDat_obsTemp$date_start, saveDat_obsTemp$date_end, USE.NAMES = TRUE)
+saveDat_obsTemp$MinPH <- mapply(function(a, b)
+  min(PH_DailyMin$MinPH[PH_DailyMin$Station == b][match(a, PH_DailyMin$DateFormatted[PH_DailyMin$Station == b])]), ranges, names(ranges))
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsDO$Station,  saveDat_obsDO$date_start, saveDat_obsDO$date_end, USE.NAMES = TRUE)
+saveDat_obsDO$MinPH <- mapply(function(a, b)
+  min(PH_DailyMin$MinPH[PH_DailyMin$Station == b][match(a, PH_DailyMin$DateFormatted[PH_DailyMin$Station == b])]), ranges, names(ranges))
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsPH$Station,  saveDat_obsPH$date_start, saveDat_obsPH$date_end, USE.NAMES = TRUE)
+saveDat_obsPH$MinPH <- mapply(function(a, b)
+  min(PH_DailyMin$MinPH[PH_DailyMin$Station == b][match(a, PH_DailyMin$DateFormatted[PH_DailyMin$Station == b])]), ranges, names(ranges))
+
+frac_lowDO_hypoxic <- sum(saveDat_obsDO$MinDO <= 2.0, na.rm = TRUE)/NROW(saveDat_obsDO)
+round(frac_lowDO_hypoxic*100,1)
+
+frac_lowPH <- sum(saveDat_obsPH$MinPH < 7.0, na.rm = TRUE)/NROW(saveDat_obsPH)
+round(frac_lowPH*100,1)
 
 ### Table 1: Mean Depth & Tidal Height per Station
 
