@@ -4117,13 +4117,6 @@ Table1_small <- Table1[,c(1:3,8:16)]
 Table1_small$Reserve <- substr(Table1_small$Station,0,3)
 Table1_small <- Table1_small[,c(1,13,2:12)]
 
-Table1_small %>%
-  ggplot(aes(x = Total_EHW, y = `Total_EHW(NoTide)`)) +
-  stat_smooth(method = 'lm', color = "black") +
-  geom_point(aes(color = Reserve)) +
-  theme_bw() +
-  theme(panel.grid = element_blank())
-
 ehw_lm <- lm(Table1_small$`Total_EHW(NoTide)`~Table1_small$Total_EHW)
 do_lm <- lm(Table1_small$`Total_LowDO(NoTide)`~Table1_small$Total_LowDO)
 ph_lm <- lm(Table1_small$`Total_LowPH(NoTide)`~Table1_small$Total_LowPH)
@@ -4134,6 +4127,9 @@ summary(ph_lm)
 t.test(Table1_small$Total_EHW,Table1_small$`Total_EHW(NoTide)`,paired = TRUE)
 t.test(Table1_small$Total_LowDO,Table1_small$`Total_LowDO(NoTide)`,paired = TRUE)
 t.test(Table1_small$Total_LowPH,Table1_small$`Total_LowPH(NoTide)`,paired = TRUE)
+
+setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
+write.csv(Table1, "Table1.csv")
 
 ### Replace mean salinity NA values with mean of station salinity
 
@@ -4247,34 +4243,41 @@ LPH$Region <- ifelse(LPH$Station == "pdbby", "West",
 
 
 
-hw_region <- MHW %>%
+mhw_region <- MHW %>%
   group_by(Year, Region) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(intensity_cumulative_relThresh),
             Avg.Onset = mean(rate_onset),
             Avg.Decline = mean(rate_decline),
-            EventPerStation = length(duration)/n_distinct(Station))
-hw_salinity <- MHW %>%
+            SumEvents = length(duration))
+mhw_salinity <- MHW %>%
   group_by(Year, Sal.class) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(intensity_cumulative_relThresh),
             Avg.Onset = mean(rate_onset),
             Avg.Decline = mean(rate_decline),
-            EventPerStation = length(duration)/n_distinct(Station))
-hw_season <- MHW %>%
+            Frequency = length(duration)/n_distinct(Station))
+mhw_season <- MHW %>%
   group_by(Year, Season) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(intensity_cumulative_relThresh),
             Avg.Onset = mean(rate_onset),
             Avg.Decline = mean(rate_decline),
-            EventPerStation = length(duration)/17)
-hw_time <- MHW %>%
+            Frequency = length(duration)/17)
+mhw_time <- MHW %>%
   group_by(Year) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(intensity_cumulative_relThresh),
             Avg.Onset = mean(rate_onset),
             Avg.Decline = mean(rate_decline),
-            EventPerStation = length(duration)/17)
+            Frequency = length(duration)/17)
+
+mhw_region$nStations[mhw_region$Region == 'NE'] <- 5
+mhw_region$nStations[mhw_region$Region == 'MidAtl'] <- 3
+mhw_region$nStations[mhw_region$Region == 'SE'] <- 4
+mhw_region$nStations[mhw_region$Region == 'GoM'] <- 2
+mhw_region$nStations[mhw_region$Region == 'West'] <- 2
+mhw_region$Frequency = round(mhw_region$SumEvents/mhw_region$nStations, digits = 2)
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
 x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4292,9 +4295,10 @@ x3$Region <- "MidAtl"
 x4$Region <- "West"
 x5$Region <- "NE"
 region <- rbind(x1,x2,x3,x4,x5)
-hw_region <- merge(hw_region, region, by = c("Year","Region"), all = TRUE)
-hw_region[c(2:3,23,80,93),3:7] <- 0
-hw_time$Type <- "HW"
+mhw_region <- merge(mhw_region, region, by = c("Year","Region"), all = TRUE)
+mhw_region <- mhw_region[,c(1:6,9)]
+mhw_region[c(2:3,23,80,93),3:7] <- 0
+mhw_time$Type <- "MHW"
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
 x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4312,8 +4316,8 @@ x3$Sal.class <- "Mesohaline"
 x4$Sal.class <- "Polyhaline"
 x5$Sal.class <- "Seawater"
 salinity <- rbind(x1,x2,x3,x4,x5)
-hw_salinity <- merge(hw_salinity, salinity, by = c("Year","Sal.class"), all = TRUE)
-hw_salinity[c(27,40,42,70,87,91,95,120),3:7] <- 0
+mhw_salinity <- merge(mhw_salinity, salinity, by = c("Year","Sal.class"), all = TRUE)
+mhw_salinity[c(27,40,42,70,87,91,95,120),3:7] <- 0
 
 do_region <- LDO %>%
   group_by(Year, Region) %>%
@@ -4321,28 +4325,35 @@ do_region <- LDO %>%
             Avg.CuInt = mean(abs(intensity_cumulative_relThresh)),
             Avg.Onset = mean(abs(rate_onset)),
             Avg.Decline = mean(abs(rate_decline)),
-            EventPerStation = length(duration)/n_distinct(Station))
+            SumEvents = length(duration))
 do_salinity <- LDO %>%
   group_by(Year, Sal.class) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(abs(intensity_cumulative_relThresh)),
             Avg.Onset = mean(abs(rate_onset)),
             Avg.Decline = mean(abs(rate_decline)),
-            EventPerStation = length(duration)/n_distinct(Station))
+            Frequency = length(duration)/n_distinct(Station))
 do_season <- LDO %>%
   group_by(Year, Season) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(abs(intensity_cumulative_relThresh)),
             Avg.Onset = mean(abs(rate_onset)),
             Avg.Decline = mean(abs(rate_decline)),
-            EventPerStation = length(duration)/17)
+            Frequency = length(duration)/17)
 do_time <- LDO %>%
   group_by(Year) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(abs(intensity_cumulative_relThresh)),
             Avg.Onset = mean(abs(rate_onset)),
             Avg.Decline = mean(abs(rate_decline)),
-            EventPerStation = length(duration)/17)
+            Frequency = length(duration)/17)
+
+do_region$nStations[do_region$Region == 'NE'] <- 5
+do_region$nStations[do_region$Region == 'MidAtl'] <- 3
+do_region$nStations[do_region$Region == 'SE'] <- 4
+do_region$nStations[do_region$Region == 'GoM'] <- 2
+do_region$nStations[do_region$Region == 'West'] <- 2
+do_region$Frequency = round(do_region$SumEvents/do_region$nStations, digits = 2)
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
 x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4361,6 +4372,7 @@ x4$Region <- "West"
 x5$Region <- "NE"
 region <- rbind(x1,x2,x3,x4,x5)
 do_region <- merge(do_region, region, by = c("Year","Region"), all = TRUE)
+do_region <- do_region[,c(1:6,9)]
 do_region[c(1,76,94),3:7] <- 0
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4389,28 +4401,35 @@ ph_region <- LPH %>%
             Avg.CuInt = mean(abs(intensity_cumulative_relThresh)),
             Avg.Onset = mean(abs(rate_onset)),
             Avg.Decline = mean(abs(rate_decline)),
-            EventPerStation = length(duration)/n_distinct(Station))
+            SumEvents = length(duration))
 ph_salinity <- LPH %>%
   group_by(Year, Sal.class) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(abs(intensity_cumulative_relThresh)),
             Avg.Onset = mean(abs(rate_onset)),
             Avg.Decline = mean(abs(rate_decline)),
-            EventPerStation = length(duration)/n_distinct(Station))
+            Frequency = length(duration)/n_distinct(Station))
 ph_season <- LPH %>%
   group_by(Year, Season) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(abs(intensity_cumulative_relThresh)),
             Avg.Onset = mean(abs(rate_onset)),
             Avg.Decline = mean(abs(rate_decline)),
-            EventPerStation = length(duration)/17)
+            Frequency = length(duration)/17)
 ph_time <- LPH %>%
   group_by(Year) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(abs(intensity_cumulative_relThresh)),
             Avg.Onset = mean(abs(rate_onset)),
             Avg.Decline = mean(abs(rate_decline)),
-            EventPerStation = length(duration)/17)
+            Frequency = length(duration)/17)
+
+ph_region$nStations[ph_region$Region == 'NE'] <- 5
+ph_region$nStations[ph_region$Region == 'MidAtl'] <- 3
+ph_region$nStations[ph_region$Region == 'SE'] <- 4
+ph_region$nStations[ph_region$Region == 'GoM'] <- 2
+ph_region$nStations[ph_region$Region == 'West'] <- 2
+ph_region$Frequency = round(ph_region$SumEvents/ph_region$nStations, digits = 2)
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
 x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4429,6 +4448,7 @@ x4$Region <- "West"
 x5$Region <- "NE"
 region <- rbind(x1,x2,x3,x4,x5)
 ph_region <- merge(ph_region, region, by = c("Year","Region"), all = TRUE)
+ph_region <- ph_region[,c(1:6,9)]
 ph_region[c(21,51,61,75:76,116),3:7] <- 0
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4467,7 +4487,7 @@ ph_season <- merge(ph_season, season, by = c("Year","Season"), all = TRUE)
 ph_season[85,3:7] <- 0
 ph_time$Type <- "lowPH"
 
-hw_time <- hw_time[,c(1,7,2:6)]
+mhw_time <- mhw_time[,c(1,7,2:6)]
 do_time <- do_time[,c(1,7,2:6)]
 ph_time <- ph_time[,c(1,7,2:6)]
 
@@ -4475,7 +4495,7 @@ rm(list=setdiff(ls(), c("SlopeTable","all_daily_data","all_HFdat","Table1",
                         "saveDat_obsTemp","saveDat_obsDO","saveDat_obsPH",
                         "saveCat_obsTemp","saveCat_obsDO","saveCat_obsPH",
                         "MHW","LDO","LPH",
-                        "hw_region","hw_salinity","hw_season","hw_time",
+                        "mhw_region","mhw_salinity","mhw_season","mhw_time",
                         "do_region","do_salinity","do_season","do_time",
                         "ph_region","ph_salinity","ph_season","ph_time")))
 
@@ -4485,59 +4505,59 @@ library(Kendall)
 library(trend)
 library(mice)
 
-init = mice(hw_region, maxit = 0)
+init = mice(mhw_region, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Region")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth[c("Avg.Onset","Avg.Decline")] = "norm"
 set.seed(103)
-imputed = mice(hw_region, method = meth, predictorMaxtix = predM, m =5)
+imputed = mice(mhw_region, method = meth, predictorMaxtix = predM, m =5)
 imputed <- complete(imputed)
 sapply(imputed, function(x) sum(is.na(x)))
-hw_region <- imputed
+mhw_region <- imputed
 
-init = mice(hw_salinity, maxit = 0)
+init = mice(mhw_salinity, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Sal.class")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth[c("Avg.Onset","Avg.Decline")] = "norm"
 set.seed(105)
-imputed = mice(hw_salinity, method = meth, predictorMaxtix = predM, m =5)
+imputed = mice(mhw_salinity, method = meth, predictorMaxtix = predM, m =5)
 imputed <- complete(imputed)
 sapply(imputed, function(x) sum(is.na(x)))
-hw_salinity <- imputed
+mhw_salinity <- imputed
 
-init = mice(hw_season, maxit = 0)
+init = mice(mhw_season, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Season")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth[c("Avg.Onset","Avg.Decline")] = "norm"
 set.seed(107)
-imputed = mice(hw_season, method = meth, predictorMaxtix = predM, m =5)
+imputed = mice(mhw_season, method = meth, predictorMaxtix = predM, m =5)
 imputed <- complete(imputed)
 sapply(imputed, function(x) sum(is.na(x)))
-hw_season <- imputed
+mhw_season <- imputed
 
-init = mice(hw_time, maxit = 0)
+init = mice(mhw_time, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Type")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth[c("Avg.Onset","Avg.Decline")] = "norm"
 set.seed(101)
-imputed = mice(hw_time, method = meth, predictorMaxtix = predM, m =5)
+imputed = mice(mhw_time, method = meth, predictorMaxtix = predM, m =5)
 imputed <- complete(imputed)
 sapply(imputed, function(x) sum(is.na(x)))
-hw_time <- imputed
+mhw_time <- imputed
 
 init = mice(do_time, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Type")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth[c("Avg.Onset","Avg.Decline")] = "norm"
 set.seed(105)
 imputed = mice(do_time, method = meth, predictorMaxtix = predM, m =5)
@@ -4549,7 +4569,7 @@ init = mice(do_region, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Region")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth[c("Avg.Onset","Avg.Decline")] = "norm"
 set.seed(106)
 imputed = mice(do_region, method = meth, predictorMaxtix = predM, m =5)
@@ -4561,7 +4581,7 @@ init = mice(do_salinity, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Sal.class")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth[c("Avg.Onset","Avg.Decline")] = "norm"
 set.seed(107)
 imputed = mice(do_salinity, method = meth, predictorMaxtix = predM, m =5)
@@ -4573,7 +4593,7 @@ init = mice(do_season, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Season")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth[c("Avg.Onset","Avg.Decline")] = "norm"
 set.seed(108)
 imputed = mice(do_season, method = meth, predictorMaxtix = predM, m =5)
@@ -4585,7 +4605,7 @@ init = mice(ph_time, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Type")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth["Avg.Onset"] = "norm"
 set.seed(101)
 imputed = mice(ph_time, method = meth, predictorMaxtix = predM, m =5)
@@ -4597,7 +4617,7 @@ init = mice(ph_region, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Region")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth["Avg.Onset"] = "norm"
 set.seed(102)
 imputed = mice(ph_region, method = meth, predictorMaxtix = predM, m =5)
@@ -4609,7 +4629,7 @@ init = mice(ph_salinity, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Sal.class")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth["Avg.Onset"] = "norm"
 set.seed(103)
 imputed = mice(ph_salinity, method = meth, predictorMaxtix = predM, m =5)
@@ -4621,7 +4641,7 @@ init = mice(ph_season, maxit = 0)
 meth = init$method
 predM = init$predictorMatrix
 predM[,c("Season")] = 0
-meth[c("Year","Avg.Duration","Avg.CuInt","EventPerStation")] = ""
+meth[c("Year","Avg.Duration","Avg.CuInt","Frequency")] = ""
 meth["Avg.Onset"] = "norm"
 set.seed(104)
 imputed = mice(ph_season, method = meth, predictorMaxtix = predM, m =5)
@@ -4629,10 +4649,10 @@ imputed <- complete(imputed)
 sapply(imputed, function(x) sum(is.na(x)))
 ph_season <- imputed
 
-aa <- unique(hw_season$Season)
-bb <- unique(hw_salinity$Sal.class)
-cc <- unique(hw_region$Region)
-dd <- unique(hw_time$Type)
+aa <- unique(mhw_season$Season)
+bb <- unique(mhw_salinity$Sal.class)
+cc <- unique(mhw_region$Region)
+dd <- unique(mhw_time$Type)
 ee <- unique(do_season$Season)
 ff <- unique(do_salinity$Sal.class)
 gg <- unique(do_region$Region)
@@ -4643,10 +4663,10 @@ kk <- unique(ph_region$Region)
 ll <- unique(ph_time$Type)
 
 ### Mann Kendall Sen's Slope
-### HW Time
+### MHW Time
 
 for(i in 1:length(dd)){
-  curDat = hw_time[hw_time$Type == dd[i],]
+  curDat = mhw_time[mhw_time$Type == dd[i],]
   ts = ts(data = curDat[, 3],
           frequency = 1,
           start = min(curDat$Year),
@@ -4656,19 +4676,19 @@ for(i in 1:length(dd)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = dd[i]
-  cur_hw_time = data.frame(TestType = "Time",
+  cur_mhw_time = data.frame(TestType = "Time",
                            Variable = "Avg.Duration",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    hw_time_duration = cur_hw_time
+    mhw_time_duration = cur_mhw_time
   } else{
-    hw_time_duration = rbind(hw_time_duration, cur_hw_time)
+    mhw_time_duration = rbind(mhw_time_duration, cur_mhw_time)
   }
 }
 for(i in 1:length(dd)){
-  curDat = hw_time[hw_time$Type == dd[i],]
+  curDat = mhw_time[mhw_time$Type == dd[i],]
   ts = ts(data = curDat[, 4],
           frequency = 1,
           start = min(curDat$Year),
@@ -4678,19 +4698,19 @@ for(i in 1:length(dd)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = dd[i]
-  cur_hw_time = data.frame(TestType = "Time",
+  cur_mhw_time = data.frame(TestType = "Time",
                            Variable = "Avg.CuInt",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    hw_time_intensity = cur_hw_time
+    mhw_time_intensity = cur_mhw_time
   } else{
-    hw_time_intensity = rbind(hw_time_intensity, cur_hw_time)
+    mhw_time_intensity = rbind(mhw_time_intensity, cur_mhw_time)
   }
 }
 for(i in 1:length(dd)){
-  curDat = hw_time[hw_time$Type == dd[i],]
+  curDat = mhw_time[mhw_time$Type == dd[i],]
   ts = ts(data = curDat[, 5],
           frequency = 1,
           start = min(curDat$Year),
@@ -4700,19 +4720,19 @@ for(i in 1:length(dd)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = dd[i]
-  cur_hw_time = data.frame(TestType = "Time",
+  cur_mhw_time = data.frame(TestType = "Time",
                            Variable = "Avg.Onset",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    hw_time_onset = cur_hw_time
+    mhw_time_onset = cur_mhw_time
   } else{
-    hw_time_onset = rbind(hw_time_onset, cur_hw_time)
+    mhw_time_onset = rbind(mhw_time_onset, cur_mhw_time)
   }
 }
 for(i in 1:length(dd)){
-  curDat = hw_time[hw_time$Type == dd[i],]
+  curDat = mhw_time[mhw_time$Type == dd[i],]
   ts = ts(data = curDat[, 6],
           frequency = 1,
           start = min(curDat$Year),
@@ -4722,19 +4742,19 @@ for(i in 1:length(dd)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = dd[i]
-  cur_hw_time = data.frame(TestType = "Time",
+  cur_mhw_time = data.frame(TestType = "Time",
                            Variable = "Avg.Decline",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    hw_time_decline = cur_hw_time
+    mhw_time_decline = cur_mhw_time
   } else{
-    hw_time_decline = rbind(hw_time_decline, cur_hw_time)
+    mhw_time_decline = rbind(mhw_time_decline, cur_mhw_time)
   }
 }
 for(i in 1:length(dd)){
-  curDat = hw_time[hw_time$Type == dd[i],]
+  curDat = mhw_time[mhw_time$Type == dd[i],]
   ts = ts(data = curDat[, 7],
           frequency = 1,
           start = min(curDat$Year),
@@ -4744,22 +4764,22 @@ for(i in 1:length(dd)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = dd[i]
-  cur_hw_time = data.frame(TestType = "Time",
-                           Variable = "EventPerStation",
+  cur_mhw_time = data.frame(TestType = "Time",
+                           Variable = "Frequency",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    hw_time_events = cur_hw_time
+    mhw_time_events = cur_mhw_time
   } else{
-    hw_time_events = rbind(hw_time_events, cur_hw_time)
+    mhw_time_events = rbind(mhw_time_events, cur_mhw_time)
   }
 }
 
-### HW Region
+### MHW Region
 
 for(i in 1:length(cc)){
-  curDat = hw_region[hw_region$Region == cc[i],]
+  curDat = mhw_region[mhw_region$Region == cc[i],]
   ts = ts(data = curDat[, 3],
           frequency = 1,
           start = min(curDat$Year),
@@ -4769,19 +4789,19 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = cc[i]
-  cur_hw_region = data.frame(TestType = "Region",
+  cur_mhw_region = data.frame(TestType = "Region",
                              Variable = "Avg.Duration",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_region_duration = cur_hw_region
+    mhw_region_duration = cur_mhw_region
   } else{
-    hw_region_duration = rbind(hw_region_duration, cur_hw_region)
+    mhw_region_duration = rbind(mhw_region_duration, cur_mhw_region)
   }
 }
 for(i in 1:length(cc)){
-  curDat = hw_region[hw_region$Region == cc[i],]
+  curDat = mhw_region[mhw_region$Region == cc[i],]
   ts = ts(data = curDat[, 4],
           frequency = 1,
           start = min(curDat$Year),
@@ -4791,19 +4811,19 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = cc[i]
-  cur_hw_region = data.frame(TestType = "Region",
+  cur_mhw_region = data.frame(TestType = "Region",
                              Variable = "Avg.CuInt",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_region_intensity = cur_hw_region
+    mhw_region_intensity = cur_mhw_region
   } else{
-    hw_region_intensity = rbind(hw_region_intensity, cur_hw_region)
+    mhw_region_intensity = rbind(mhw_region_intensity, cur_mhw_region)
   }
 }
 for(i in 1:length(cc)){
-  curDat = hw_region[hw_region$Region == cc[i],]
+  curDat = mhw_region[mhw_region$Region == cc[i],]
   ts = ts(data = curDat[, 5],
           frequency = 1,
           start = min(curDat$Year),
@@ -4813,19 +4833,19 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = cc[i]
-  cur_hw_region = data.frame(TestType = "Region",
+  cur_mhw_region = data.frame(TestType = "Region",
                              Variable = "Avg.Onset",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_region_onset = cur_hw_region
+    mhw_region_onset = cur_mhw_region
   } else{
-    hw_region_onset = rbind(hw_region_onset, cur_hw_region)
+    mhw_region_onset = rbind(mhw_region_onset, cur_mhw_region)
   }
 }
 for(i in 1:length(cc)){
-  curDat = hw_region[hw_region$Region == cc[i],]
+  curDat = mhw_region[mhw_region$Region == cc[i],]
   ts = ts(data = curDat[, 6],
           frequency = 1,
           start = min(curDat$Year),
@@ -4835,19 +4855,19 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = cc[i]
-  cur_hw_region = data.frame(TestType = "Region",
+  cur_mhw_region = data.frame(TestType = "Region",
                              Variable = "Avg.Decline",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_region_decline = cur_hw_region
+    mhw_region_decline = cur_mhw_region
   } else{
-    hw_region_decline = rbind(hw_region_decline, cur_hw_region)
+    mhw_region_decline = rbind(mhw_region_decline, cur_mhw_region)
   }
 }
 for(i in 1:length(cc)){
-  curDat = hw_region[hw_region$Region == cc[i],]
+  curDat = mhw_region[mhw_region$Region == cc[i],]
   ts = ts(data = curDat[, 7],
           frequency = 1,
           start = min(curDat$Year),
@@ -4857,22 +4877,22 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = cc[i]
-  cur_hw_region = data.frame(TestType = "Region",
-                             Variable = "EventPerStation",
+  cur_mhw_region = data.frame(TestType = "Region",
+                             Variable = "Frequency",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_region_events = cur_hw_region
+    mhw_region_events = cur_mhw_region
   } else{
-    hw_region_events = rbind(hw_region_events, cur_hw_region)
+    mhw_region_events = rbind(mhw_region_events, cur_mhw_region)
   }
 }
 
-### HW Salinity
+### MHW Salinity
 
 for(i in 1:length(bb)){
-  curDat = hw_salinity[hw_salinity$Sal.class == bb[i],]
+  curDat = mhw_salinity[mhw_salinity$Sal.class == bb[i],]
   ts = ts(data = curDat[, 3],
           frequency = 1,
           start = min(curDat$Year),
@@ -4882,19 +4902,19 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Sal = bb[i]
-  cur_hw_sal = data.frame(TestType = "Salinity",
+  cur_mhw_sal = data.frame(TestType = "Salinity",
                           Variable = "Avg.Duration",
                           Category = Sal,
                           slope = round(slope, 3),
                           p.val = round(p.val, 4))
   if( i == 1){
-    hw_sal_duration = cur_hw_sal
+    mhw_sal_duration = cur_mhw_sal
   } else{
-    hw_sal_duration = rbind(hw_sal_duration, cur_hw_sal)
+    mhw_sal_duration = rbind(mhw_sal_duration, cur_mhw_sal)
   }
 }
 for(i in 1:length(bb)){
-  curDat = hw_salinity[hw_salinity$Sal.class == bb[i],]
+  curDat = mhw_salinity[mhw_salinity$Sal.class == bb[i],]
   ts = ts(data = curDat[, 4],
           frequency = 1,
           start = min(curDat$Year),
@@ -4904,19 +4924,19 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Sal = bb[i]
-  cur_hw_sal = data.frame(TestType = "Salinity",
+  cur_mhw_sal = data.frame(TestType = "Salinity",
                           Variable = "Avg.CuInt",
                           Category = Sal,
                           slope = round(slope, 3),
                           p.val = round(p.val, 4))
   if( i == 1){
-    hw_sal_intensity = cur_hw_sal
+    mhw_sal_intensity = cur_mhw_sal
   } else{
-    hw_sal_intensity = rbind(hw_sal_intensity, cur_hw_sal)
+    mhw_sal_intensity = rbind(mhw_sal_intensity, cur_mhw_sal)
   }
 }
 for(i in 1:length(bb)){
-  curDat = hw_salinity[hw_salinity$Sal.class == bb[i],]
+  curDat = mhw_salinity[mhw_salinity$Sal.class == bb[i],]
   ts = ts(data = curDat[, 5],
           frequency = 1,
           start = min(curDat$Year),
@@ -4926,19 +4946,19 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Sal = bb[i]
-  cur_hw_sal = data.frame(TestType = "Salinity",
+  cur_mhw_sal = data.frame(TestType = "Salinity",
                           Variable = "Avg.Onset",
                           Category = Sal,
                           slope = round(slope, 3),
                           p.val = round(p.val, 4))
   if( i == 1){
-    hw_sal_onset = cur_hw_sal
+    mhw_sal_onset = cur_mhw_sal
   } else{
-    hw_sal_onset = rbind(hw_sal_onset, cur_hw_sal)
+    mhw_sal_onset = rbind(mhw_sal_onset, cur_mhw_sal)
   }
 }
 for(i in 1:length(bb)){
-  curDat = hw_salinity[hw_salinity$Sal.class == bb[i],]
+  curDat = mhw_salinity[mhw_salinity$Sal.class == bb[i],]
   ts = ts(data = curDat[, 6],
           frequency = 1,
           start = min(curDat$Year),
@@ -4948,19 +4968,19 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Sal = bb[i]
-  cur_hw_sal = data.frame(TestType = "Salinity",
+  cur_mhw_sal = data.frame(TestType = "Salinity",
                           Variable = "Avg.Decline",
                           Category = Sal,
                           slope = round(slope, 3),
                           p.val = round(p.val, 4))
   if( i == 1){
-    hw_sal_decline = cur_hw_sal
+    mhw_sal_decline = cur_mhw_sal
   } else{
-    hw_sal_decline = rbind(hw_sal_decline, cur_hw_sal)
+    mhw_sal_decline = rbind(mhw_sal_decline, cur_mhw_sal)
   }
 }
 for(i in 1:length(bb)){
-  curDat = hw_salinity[hw_salinity$Sal.class == bb[i],]
+  curDat = mhw_salinity[mhw_salinity$Sal.class == bb[i],]
   ts = ts(data = curDat[, 7],
           frequency = 1,
           start = min(curDat$Year),
@@ -4970,22 +4990,22 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Sal = bb[i]
-  cur_hw_sal = data.frame(TestType = "Salinity",
-                          Variable = "EventPerStation",
+  cur_mhw_sal = data.frame(TestType = "Salinity",
+                          Variable = "Frequency",
                           Category = Sal,
                           slope = round(slope, 3),
                           p.val = round(p.val, 4))
   if( i == 1){
-    hw_sal_events = cur_hw_sal
+    mhw_sal_events = cur_mhw_sal
   } else{
-    hw_sal_events = rbind(hw_sal_events, cur_hw_sal)
+    mhw_sal_events = rbind(mhw_sal_events, cur_mhw_sal)
   }
 }
 
-### HW Season
+### MHW Season
 
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = mhw_season[mhw_season$Season == aa[i],]
   ts = ts(data = curDat[, 3],
           frequency = 1,
           start = min(curDat$Year),
@@ -4995,19 +5015,19 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
+  cur_mhw_season = data.frame(TestType = "Season",
                              Variable = "Avg.Duration",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_season_duration = cur_hw_season
+    mhw_season_duration = cur_mhw_season
   } else{
-    hw_season_duration = rbind(hw_season_duration, cur_hw_season)
+    mhw_season_duration = rbind(mhw_season_duration, cur_mhw_season)
   }
 }
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = mhw_season[mhw_season$Season == aa[i],]
   ts = ts(data = curDat[, 4],
           frequency = 1,
           start = min(curDat$Year),
@@ -5017,19 +5037,19 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
+  cur_mhw_season = data.frame(TestType = "Season",
                              Variable = "Avg.CuInt",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_season_intensity = cur_hw_season
+    mhw_season_intensity = cur_mhw_season
   } else{
-    hw_season_intensity = rbind(hw_season_intensity, cur_hw_season)
+    mhw_season_intensity = rbind(mhw_season_intensity, cur_mhw_season)
   }
 }
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = mhw_season[mhw_season$Season == aa[i],]
   ts = ts(data = curDat[, 5],
           frequency = 1,
           start = min(curDat$Year),
@@ -5039,19 +5059,19 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
+  cur_mhw_season = data.frame(TestType = "Season",
                              Variable = "Avg.Onset",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_season_onset = cur_hw_season
+    mhw_season_onset = cur_mhw_season
   } else{
-    hw_season_onset = rbind(hw_season_onset, cur_hw_season)
+    mhw_season_onset = rbind(mhw_season_onset, cur_mhw_season)
   }
 }
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = mhw_season[mhw_season$Season == aa[i],]
   ts = ts(data = curDat[, 6],
           frequency = 1,
           start = min(curDat$Year),
@@ -5061,19 +5081,19 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
+  cur_mhw_season = data.frame(TestType = "Season",
                              Variable = "Avg.Decline",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_season_decline = cur_hw_season
+    mhw_season_decline = cur_mhw_season
   } else{
-    hw_season_decline = rbind(hw_season_decline, cur_hw_season)
+    mhw_season_decline = rbind(mhw_season_decline, cur_mhw_season)
   }
 }
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = mhw_season[mhw_season$Season == aa[i],]
   ts = ts(data = curDat[, 7],
           frequency = 1,
           start = min(curDat$Year),
@@ -5083,15 +5103,15 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
-                             Variable = "EventPerStation",
+  cur_mhw_season = data.frame(TestType = "Season",
+                             Variable = "Frequency",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    hw_season_events = cur_hw_season
+    mhw_season_events = cur_mhw_season
   } else{
-    hw_season_events = rbind(hw_season_events, cur_hw_season)
+    mhw_season_events = rbind(mhw_season_events, cur_mhw_season)
   }
 }
 
@@ -5197,7 +5217,7 @@ for(i in 1:length(ll)){
   slope = ss$estimates
   Type = ll[i]
   cur_ph_time = data.frame(TestType = "Time",
-                           Variable = "EventPerStation",
+                           Variable = "Frequency",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
@@ -5310,7 +5330,7 @@ for(i in 1:length(hh)){
   slope = ss$estimates
   Type = hh[i]
   cur_do_time = data.frame(TestType = "Time",
-                           Variable = "EventPerStation",
+                           Variable = "Frequency",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
@@ -5423,7 +5443,7 @@ for(i in 1:length(kk)){
   slope = ss$estimates
   Region = kk[i]
   cur_ph_region = data.frame(TestType = "Region",
-                             Variable = "EventPerStation",
+                             Variable = "Frequency",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
@@ -5536,7 +5556,7 @@ for(i in 1:length(gg)){
   slope = ss$estimates
   Region = gg[i]
   cur_do_region = data.frame(TestType = "Region",
-                             Variable = "EventPerStation",
+                             Variable = "Frequency",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
@@ -5649,7 +5669,7 @@ for(i in 1:length(jj)){
   slope = ss$estimates
   Sal = jj[i]
   cur_ph_sal = data.frame(TestType = "Salinity",
-                          Variable = "EventPerStation",
+                          Variable = "Frequency",
                           Category = Sal,
                           slope = round(slope, 3),
                           p.val = round(p.val, 4))
@@ -5762,7 +5782,7 @@ for(i in 1:length(ff)){
   slope = ss$estimates
   Sal = ff[i]
   cur_do_sal = data.frame(TestType = "Salinity",
-                          Variable = "EventPerStation",
+                          Variable = "Frequency",
                           Category = Sal,
                           slope = round(slope, 3),
                           p.val = round(p.val, 4))
@@ -5875,7 +5895,7 @@ for(i in 1:length(aa)){
   slope = ss$estimates
   Season = aa[i]
   cur_ph_season = data.frame(TestType = "Season",
-                             Variable = "EventPerStation",
+                             Variable = "Frequency",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
@@ -5988,7 +6008,7 @@ for(i in 1:length(ee)){
   slope = ss$estimates
   Season = ee[i]
   cur_do_season = data.frame(TestType = "Season",
-                             Variable = "EventPerStation",
+                             Variable = "Frequency",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
@@ -6732,7 +6752,6 @@ df_mhwDO[is.na(df_mhwDO)] <- 0
 df_mhwPH[is.na(df_mhwPH)] <- 0
 
 ### Triple Whammies
-
 # First create the reference interval
 
 library(lubridate)
@@ -8750,25 +8769,25 @@ fdr_table[6:25,3] <- (fdr_table$Rank[6:25]/20)*.1
 fdr_table[26:50,3] <- (fdr_table$Rank[26:50]/25)*.1
 fdr_table[51:75,3] <- (fdr_table$Rank[51:75]/25)*.1
 
-hw.time <- rbind(hw_time_decline,hw_time_duration,hw_time_events,hw_time_intensity,hw_time_onset)
-hw.time <- hw.time %>%
+mhw.time <- rbind(mhw_time_decline,mhw_time_duration,mhw_time_events,mhw_time_intensity,mhw_time_onset)
+mhw.time <- mhw.time %>%
   arrange(-desc(p.val))
-hw.time$Rank <- seq(1,5,1)
+mhw.time$Rank <- seq(1,5,1)
 
-hw.season <- rbind(hw_season_decline,hw_season_duration,hw_season_events,hw_season_intensity,hw_season_onset)
-hw.season <- hw.season %>%
+mhw.season <- rbind(mhw_season_decline,mhw_season_duration,mhw_season_events,mhw_season_intensity,mhw_season_onset)
+mhw.season <- mhw.season %>%
   arrange(-desc(p.val))
-hw.season$Rank <- seq(1,20,1)
+mhw.season$Rank <- seq(1,20,1)
 
-hw.salinity <- rbind(hw_sal_decline,hw_sal_duration,hw_sal_events,hw_sal_intensity,hw_sal_onset)
-hw.salinity <- hw.salinity %>%
+mhw.salinity <- rbind(mhw_sal_decline,mhw_sal_duration,mhw_sal_events,mhw_sal_intensity,mhw_sal_onset)
+mhw.salinity <- mhw.salinity %>%
   arrange(-desc(p.val))
-hw.salinity$Rank <- seq(1,25,1)
+mhw.salinity$Rank <- seq(1,25,1)
 
-hw.region <- rbind(hw_region_decline,hw_region_duration,hw_region_events,hw_region_intensity,hw_region_onset)
-hw.region <- hw.region %>%
+mhw.region <- rbind(mhw_region_decline,mhw_region_duration,mhw_region_events,mhw_region_intensity,mhw_region_onset)
+mhw.region <- mhw.region %>%
   arrange(-desc(p.val))
-hw.region$Rank <- seq(1,25,1)
+mhw.region$Rank <- seq(1,25,1)
 
 do.time <- rbind(do_time_decline,do_time_duration,do_time_events,do_time_intensity,do_time_onset)
 do.time <- do.time %>%
@@ -8810,11 +8829,11 @@ ph.region <- ph.region %>%
   arrange(-desc(p.val))
 ph.region$Rank <- seq(1,25,1)
 
-hw_MKSS_results <- rbind(hw.time,hw.season,hw.salinity,hw.region)
-hw_MKSS_results <- hw_MKSS_results[,c(6,1:5)]
-hw_MKSS_results <- left_join(hw_MKSS_results,fdr_table, by = c("TestType","Rank"))
-hw_MKSS_results$SigTest <- ifelse(hw_MKSS_results$p.val < hw_MKSS_results$FDR_0.1,"Sig","NS")
-View(hw_MKSS_results)
+mhw_MKSS_results <- rbind(mhw.time,mhw.season,mhw.salinity,mhw.region)
+mhw_MKSS_results <- mhw_MKSS_results[,c(6,1:5)]
+mhw_MKSS_results <- left_join(mhw_MKSS_results,fdr_table, by = c("TestType","Rank"))
+mhw_MKSS_results$SigTest <- ifelse(mhw_MKSS_results$p.val < mhw_MKSS_results$FDR_0.1,"Sig","NS")
+View(mhw_MKSS_results)
 
 do_MKSS_results <- rbind(do.time,do.season,do.salinity,do.region)
 do_MKSS_results <- do_MKSS_results[,c(6,1:5)]
@@ -8828,14 +8847,14 @@ ph_MKSS_results <- left_join(ph_MKSS_results,fdr_table, by = c("TestType","Rank"
 ph_MKSS_results$SigTest <- ifelse(ph_MKSS_results$p.val < ph_MKSS_results$FDR_0.1,"Sig","NS")
 View(ph_MKSS_results)
 
-hw_MKSS_results_sig <- hw_MKSS_results[c(1:3,6,26:31,51),]
-hw_MKSS_results_sig$Test <- "HW"
+mhw_MKSS_results_sig <- mhw_MKSS_results[c(1:3,6,26:31,51),]
+mhw_MKSS_results_sig$Test <- "mhw"
 do_MKSS_results_sig <- do_MKSS_results[c(1:3,6:11,26:29,51:57),]
 do_MKSS_results_sig$Test <- "lowDO"
-ph_MKSS_results_sig <- ph_MKSS_results[c(1,6:12,51:59),]
+ph_MKSS_results_sig <- ph_MKSS_results[c(1,6:12,51:58),]
 ph_MKSS_results_sig$Test <- "lowPH"
 
-sig_MKSS_results <- rbind(hw_MKSS_results_sig,do_MKSS_results_sig,ph_MKSS_results_sig)
+sig_MKSS_results <- rbind(mhw_MKSS_results_sig,do_MKSS_results_sig,ph_MKSS_results_sig)
 
 #Table 2: Atmospheric Heatwaves (AHW)
 
@@ -8859,27 +8878,34 @@ AHW$Region <- ifelse(AHW$StationCode == "pdb", "West",
                                                                                     ifelse(AHW$StationCode == "nar", "NE",
                                                                                            ifelse(AHW$StationCode == "wel", "NE", NA))))))))))))
 
-hw_region <- AHW %>%
+ahw_region <- AHW %>%
   group_by(Year, Region) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(intensity_cumulative_relThresh),
             Avg.Onset = mean(rate_onset),
             Avg.Decline = mean(rate_decline),
-            EventPerStation = length(duration)/length(unique(StationCode)))
-hw_season <- AHW %>%
+            SumEvents = length(duration))
+ahw_season <- AHW %>%
   group_by(Year, Season) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(intensity_cumulative_relThresh),
             Avg.Onset = mean(rate_onset),
             Avg.Decline = mean(rate_decline),
-            EventPerStation = length(duration)/length(unique(StationCode)))
-hw_time <- AHW %>%
+            Frequency = length(duration)/12)
+ahw_time <- AHW %>%
   group_by(Year) %>%
   summarise(Avg.Duration = mean(duration),
             Avg.CuInt = mean(intensity_cumulative_relThresh),
             Avg.Onset = mean(rate_onset),
             Avg.Decline = mean(rate_decline),
-            EventPerStation = length(duration)/length(unique(StationCode)))
+            Frequency = length(duration)/12)
+
+ahw_region$nStations[ahw_region$Region == 'NE'] <- 4
+ahw_region$nStations[ahw_region$Region == 'MidAtl'] <- 2
+ahw_region$nStations[ahw_region$Region == 'SE'] <- 3
+ahw_region$nStations[ahw_region$Region == 'GoM'] <- 1
+ahw_region$nStations[ahw_region$Region == 'West'] <- 2
+ahw_region$Frequency = round(ahw_region$SumEvents/ahw_region$nStations, digits = 2)
 
 x1 <- as.data.frame(seq(from = 2002, to = 2019, by = 1))
 x2 <- as.data.frame(seq(from = 2002, to = 2019, by = 1))
@@ -8897,38 +8923,21 @@ x3$Region <- "SE"
 x4$Region <- "West"
 x5$Region <- "NE"
 region <- rbind(x1,x2,x3,x4,x5)
+ahw_region <- merge(ahw_region, region, by = c("Year","Region"), all = TRUE)
+ahw_region <- ahw_region[,c(1:6,9)]
+ahw_region[c(39,61),3:7] <- 0
 
-hw_region <- merge(hw_region, region, by = c("Year","Region"), all = TRUE)
+ahw_time$Type <- "AHW"
+ahw_time <- ahw_time[,c(1,7,2:6)]
 
-hw_region[c(39,61),3:7] <- 0
-
-x1 <- as.data.frame(seq(from = 2002, to = 2019, by = 1))
-x2 <- as.data.frame(seq(from = 2002, to = 2019, by = 1))
-x3 <- as.data.frame(seq(from = 2002, to = 2019, by = 1))
-x4 <- as.data.frame(seq(from = 2002, to = 2019, by = 1))
-names(x1)[1] <- "Year"
-names(x2)[1] <- "Year"
-names(x3)[1] <- "Year"
-names(x4)[1] <- "Year"
-x1$Season <- "Winter"
-x2$Season <- "Spring"
-x3$Season <- "Summer"
-x4$Season <- "Fall"
-season <- rbind(x1,x2,x3,x4)
-
-hw_season <- merge(hw_season, season, by = c("Year","Season"), all = TRUE)
-
-hw_time$Type <- "AHW"
-hw_time <- hw_time[,c(1,7,2:6)]
-
-aa <- unique(hw_season$Season)
-bb <- unique(hw_region$Region)
-cc <- unique(hw_time$Type)
+aa <- unique(ahw_season$Season)
+bb <- unique(ahw_region$Region)
+cc <- unique(ahw_time$Type)
 
 # AHW Season
 
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = ahw_season[ahw_season$Season == aa[i],]
   ts = ts(data = curDat[, 3],
           frequency = 1,
           start = min(curDat$Year),
@@ -8938,19 +8947,19 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
+  cur_ahw_season = data.frame(TestType = "Season",
                              Variable = "Avg.Duration",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_season_duration = cur_hw_season
+    ahw_season_duration = cur_ahw_season
   } else{
-    ahw_season_duration = rbind(ahw_season_duration, cur_hw_season)
+    ahw_season_duration = rbind(ahw_season_duration, cur_ahw_season)
   }
 }
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = ahw_season[ahw_season$Season == aa[i],]
   ts = ts(data = curDat[, 4],
           frequency = 1,
           start = min(curDat$Year),
@@ -8960,19 +8969,19 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
+  cur_ahw_season = data.frame(TestType = "Season",
                              Variable = "Avg.CuInt",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_season_intensity = cur_hw_season
+    ahw_season_intensity = cur_ahw_season
   } else{
-    ahw_season_intensity = rbind(ahw_season_intensity, cur_hw_season)
+    ahw_season_intensity = rbind(ahw_season_intensity, cur_ahw_season)
   }
 }
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = ahw_season[ahw_season$Season == aa[i],]
   ts = ts(data = curDat[, 5],
           frequency = 1,
           start = min(curDat$Year),
@@ -8982,19 +8991,19 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
+  cur_ahw_season = data.frame(TestType = "Season",
                              Variable = "Avg.Onset",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_season_onset = cur_hw_season
+    ahw_season_onset = cur_ahw_season
   } else{
-    ahw_season_onset = rbind(ahw_season_onset, cur_hw_season)
+    ahw_season_onset = rbind(ahw_season_onset, cur_ahw_season)
   }
 }
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = ahw_season[ahw_season$Season == aa[i],]
   ts = ts(data = curDat[, 6],
           frequency = 1,
           start = min(curDat$Year),
@@ -9004,19 +9013,19 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
+  cur_ahw_season = data.frame(TestType = "Season",
                              Variable = "Avg.Decline",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_season_decline = cur_hw_season
+    ahw_season_decline = cur_ahw_season
   } else{
-    ahw_season_decline = rbind(ahw_season_decline, cur_hw_season)
+    ahw_season_decline = rbind(ahw_season_decline, cur_ahw_season)
   }
 }
 for(i in 1:length(aa)){
-  curDat = hw_season[hw_season$Season == aa[i],]
+  curDat = ahw_season[ahw_season$Season == aa[i],]
   ts = ts(data = curDat[, 7],
           frequency = 1,
           start = min(curDat$Year),
@@ -9026,22 +9035,22 @@ for(i in 1:length(aa)){
   p.val = ManKen$sl
   slope = ss$estimates
   Season = aa[i]
-  cur_hw_season = data.frame(TestType = "Season",
-                             Variable = "EventsPerStation",
+  cur_ahw_season = data.frame(TestType = "Season",
+                             Variable = "Frequency",
                              Category = Season,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_season_events = cur_hw_season
+    ahw_season_events = cur_ahw_season
   } else{
-    ahw_season_events = rbind(ahw_season_events, cur_hw_season)
+    ahw_season_events = rbind(ahw_season_events, cur_ahw_season)
   }
 }
 
 # AHW Region
 
 for(i in 1:length(bb)){
-  curDat = hw_region[hw_region$Region == bb[i],]
+  curDat = ahw_region[ahw_region$Region == bb[i],]
   ts = ts(data = curDat[, 3],
           frequency = 1,
           start = min(curDat$Year),
@@ -9051,19 +9060,19 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = bb[i]
-  cur_hw_region = data.frame(TestType = "Region",
+  cur_ahw_region = data.frame(TestType = "Region",
                              Variable = "Avg.Duration",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_region_duration = cur_hw_region
+    ahw_region_duration = cur_ahw_region
   } else{
-    ahw_region_duration = rbind(ahw_region_duration, cur_hw_region)
+    ahw_region_duration = rbind(ahw_region_duration, cur_ahw_region)
   }
 }
 for(i in 1:length(bb)){
-  curDat = hw_region[hw_region$Region == bb[i],]
+  curDat = ahw_region[ahw_region$Region == bb[i],]
   ts = ts(data = curDat[, 4],
           frequency = 1,
           start = min(curDat$Year),
@@ -9073,19 +9082,19 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = bb[i]
-  cur_hw_region = data.frame(TestType = "Region",
+  cur_ahw_region = data.frame(TestType = "Region",
                              Variable = "Avg.CuInt",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_region_intensity = cur_hw_region
+    ahw_region_intensity = cur_ahw_region
   } else{
-    ahw_region_intensity = rbind(ahw_region_intensity, cur_hw_region)
+    ahw_region_intensity = rbind(ahw_region_intensity, cur_ahw_region)
   }
 }
 for(i in 1:length(bb)){
-  curDat = hw_region[hw_region$Region == bb[i],]
+  curDat = ahw_region[ahw_region$Region == bb[i],]
   ts = ts(data = curDat[, 5],
           frequency = 1,
           start = min(curDat$Year),
@@ -9095,19 +9104,19 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = bb[i]
-  cur_hw_region = data.frame(TestType = "Region",
+  cur_ahw_region = data.frame(TestType = "Region",
                              Variable = "Avg.Onset",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_region_onset = cur_hw_region
+    ahw_region_onset = cur_ahw_region
   } else{
-    ahw_region_onset = rbind(ahw_region_onset, cur_hw_region)
+    ahw_region_onset = rbind(ahw_region_onset, cur_ahw_region)
   }
 }
 for(i in 1:length(bb)){
-  curDat = hw_region[hw_region$Region == bb[i],]
+  curDat = ahw_region[ahw_region$Region == bb[i],]
   ts = ts(data = curDat[, 6],
           frequency = 1,
           start = min(curDat$Year),
@@ -9117,19 +9126,19 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = bb[i]
-  cur_hw_region = data.frame(TestType = "Region",
+  cur_ahw_region = data.frame(TestType = "Region",
                              Variable = "Avg.Decline",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_region_decline = cur_hw_region
+    ahw_region_decline = cur_ahw_region
   } else{
-    ahw_region_decline = rbind(ahw_region_decline, cur_hw_region)
+    ahw_region_decline = rbind(ahw_region_decline, cur_ahw_region)
   }
 }
 for(i in 1:length(bb)){
-  curDat = hw_region[hw_region$Region == bb[i],]
+  curDat = ahw_region[ahw_region$Region == bb[i],]
   ts = ts(data = curDat[, 7],
           frequency = 1,
           start = min(curDat$Year),
@@ -9139,22 +9148,22 @@ for(i in 1:length(bb)){
   p.val = ManKen$sl
   slope = ss$estimates
   Region = bb[i]
-  cur_hw_region = data.frame(TestType = "Region",
-                             Variable = "EventsPerStation",
+  cur_ahw_region = data.frame(TestType = "Region",
+                             Variable = "Frequency",
                              Category = Region,
                              slope = round(slope, 3),
                              p.val = round(p.val, 4))
   if( i == 1){
-    ahw_region_events = cur_hw_region
+    ahw_region_events = cur_ahw_region
   } else{
-    ahw_region_events = rbind(ahw_region_events, cur_hw_region)
+    ahw_region_events = rbind(ahw_region_events, cur_ahw_region)
   }
 }
 
 # AHW Time
 
 for(i in 1:length(cc)){
-  curDat = hw_time[hw_time$Type == cc[i],]
+  curDat = ahw_time[ahw_time$Type == cc[i],]
   ts = ts(data = curDat[, 3],
           frequency = 1,
           start = min(curDat$Year),
@@ -9164,19 +9173,19 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = cc[i]
-  cur_hw_time = data.frame(TestType = "Time",
+  cur_ahw_time = data.frame(TestType = "Time",
                            Variable = "Avg.Duration",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    ahw_time_duration = cur_hw_time
+    ahw_time_duration = cur_ahw_time
   } else{
-    ahw_time_duration = rbind(ahw_time_duration, cur_hw_time)
+    ahw_time_duration = rbind(ahw_time_duration, cur_ahw_time)
   }
 }
 for(i in 1:length(cc)){
-  curDat = hw_time[hw_time$Type == cc[i],]
+  curDat = ahw_time[ahw_time$Type == cc[i],]
   ts = ts(data = curDat[, 4],
           frequency = 1,
           start = min(curDat$Year),
@@ -9186,19 +9195,19 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = cc[i]
-  cur_hw_time = data.frame(TestType = "Time",
+  cur_ahw_time = data.frame(TestType = "Time",
                            Variable = "Avg.CuInt",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    ahw_time_intensity = cur_hw_time
+    ahw_time_intensity = cur_ahw_time
   } else{
-    ahw_time_intensity = rbind(ahw_time_intensity, cur_hw_time)
+    ahw_time_intensity = rbind(ahw_time_intensity, cur_ahw_time)
   }
 }
 for(i in 1:length(cc)){
-  curDat = hw_time[hw_time$Type == cc[i],]
+  curDat = ahw_time[ahw_time$Type == cc[i],]
   ts = ts(data = curDat[, 5],
           frequency = 1,
           start = min(curDat$Year),
@@ -9208,19 +9217,19 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = cc[i]
-  cur_hw_time = data.frame(TestType = "Time",
+  cur_ahw_time = data.frame(TestType = "Time",
                            Variable = "Avg.Onset",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    ahw_time_onset = cur_hw_time
+    ahw_time_onset = cur_ahw_time
   } else{
-    ahw_time_onset = rbind(ahw_time_onset, cur_hw_time)
+    ahw_time_onset = rbind(ahw_time_onset, cur_ahw_time)
   }
 }
 for(i in 1:length(cc)){
-  curDat = hw_time[hw_time$Type == cc[i],]
+  curDat = ahw_time[ahw_time$Type == cc[i],]
   ts = ts(data = curDat[, 6],
           frequency = 1,
           start = min(curDat$Year),
@@ -9230,19 +9239,19 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = cc[i]
-  cur_hw_time = data.frame(TestType = "Time",
+  cur_ahw_time = data.frame(TestType = "Time",
                            Variable = "Avg.Decline",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    ahw_time_decline = cur_hw_time
+    ahw_time_decline = cur_ahw_time
   } else{
-    ahw_time_decline = rbind(ahw_time_decline, cur_hw_time)
+    ahw_time_decline = rbind(ahw_time_decline, cur_ahw_time)
   }
 }
 for(i in 1:length(cc)){
-  curDat = hw_time[hw_time$Type == cc[i],]
+  curDat = ahw_time[ahw_time$Type == cc[i],]
   ts = ts(data = curDat[, 7],
           frequency = 1,
           start = min(curDat$Year),
@@ -9252,15 +9261,15 @@ for(i in 1:length(cc)){
   p.val = ManKen$sl
   slope = ss$estimates
   Type = cc[i]
-  cur_hw_time = data.frame(TestType = "Time",
-                           Variable = "EventsPerStation",
+  cur_ahw_time = data.frame(TestType = "Time",
+                           Variable = "Frequency",
                            Category = "Time",
                            slope = round(slope, 3),
                            p.val = round(p.val, 4))
   if( i == 1){
-    ahw_time_events = cur_hw_time
+    ahw_time_events = cur_ahw_time
   } else{
-    ahw_time_events = rbind(ahw_time_events, cur_hw_time)
+    ahw_time_events = rbind(ahw_time_events, cur_ahw_time)
   }
 }
 
@@ -9298,10 +9307,7 @@ ahw_MKSS_results <- left_join(ahw_MKSS_results,fdr_table_ahw, by = c("TestType",
 ahw_MKSS_results$SigTest <- ifelse(ahw_MKSS_results$p.val < ahw_MKSS_results$FDR_0.1,"Sig","NS")
 View(ahw_MKSS_results)
 
-ahw_MKSS_results_sig <- ahw_MKSS_results[c(1,6),]
-ahw_MKSS_results_sig$Test <- "AHW"
-
-sig_MKSS_results <- rbind(ahw_MKSS_results_sig,hw_MKSS_results_sig,do_MKSS_results_sig,ph_MKSS_results_sig)
+sig_MKSS_results <- rbind(mhw_MKSS_results_sig,do_MKSS_results_sig,ph_MKSS_results_sig)
 setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
 write.csv(sig_MKSS_results,'Table2_v2.csv')
 
@@ -9465,8 +9471,7 @@ Fig6F <- ggplot(data = lowPH_sum, aes(x = Year, y = TotalDuration)) +
 
 ggarrange(Fig6A,Fig6D,Fig6B,Fig6E,Fig6C,Fig6F, nrow = 3, ncol = 2)
 
-
-# SI Table 1: Station specific trends in low DO and low pH duration
+### SI Table 1: Station specific trends in low DO and low pH duration
 
 HW_AnnualSum_duration_station <- saveCat_obsTemp %>%
   group_by(Year, Station) %>%
