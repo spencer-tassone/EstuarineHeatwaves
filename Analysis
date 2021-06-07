@@ -31,6 +31,29 @@ nocrc <- fread("nocrcwq.csv", header = TRUE, stringsAsFactors = FALSE)
 pdbby <- fread("pdbbywq.csv", header = TRUE, stringsAsFactors = FALSE)
 welin <- fread("welinwq.csv", header = TRUE, stringsAsFactors = FALSE)
 
+# The data collected by the NERRS program does NOT observed daylight savings time. So to make sure all date/times are in the proper time zone (tz)
+# you must convert the DateTimeStamp into a time zone that does not observe daylight savings time. The SWMPr package suggests using the timezones
+# below for UTC offsets (-8 = West coast sites = Pacific/Pitairn, -5 = East coast sites = America/Jamaica, -4 = Puerto Rico = America/Virgin).
+
+acesp$DateTimeStamp <- as.POSIXct(acesp$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+apaeb$DateTimeStamp <- as.POSIXct(apaeb$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+apaes$DateTimeStamp <- as.POSIXct(apaes$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+cbvtc$DateTimeStamp <- as.POSIXct(cbvtc$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+delbl$DateTimeStamp <- as.POSIXct(delbl$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+delsl$DateTimeStamp <- as.POSIXct(delsl$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+elkap$DateTimeStamp <- as.POSIXct(elkap$DateTimeStamp, tz = "Pacific/Pitcairn", "%Y-%m-%d %H:%M")
+elksm$DateTimeStamp <- as.POSIXct(elksm$DateTimeStamp, tz = "Pacific/Pitcairn", "%Y-%m-%d %H:%M")
+grbgb$DateTimeStamp <- as.POSIXct(grbgb$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+hudsk$DateTimeStamp <- as.POSIXct(hudsk$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+hudts$DateTimeStamp <- as.POSIXct(hudts$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+job09$DateTimeStamp <- as.POSIXct(job09$DateTimeStamp, tz = "America/Virgin", "%Y-%m-%d %H:%M")
+narpc$DateTimeStamp <- as.POSIXct(narpc$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+nocec$DateTimeStamp <- as.POSIXct(nocec$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+nocrc$DateTimeStamp <- as.POSIXct(nocrc$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+pdbby$DateTimeStamp <- as.POSIXct(pdbby$DateTimeStamp, tz = "Pacific/Pitcairn", "%Y-%m-%d %H:%M")
+welin$DateTimeStamp <- as.POSIXct(welin$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+
+
 all <- rbind(acesp,apaeb,apaes,cbvtc,delbl,delsl,
              elkap,elksm,grbgb,hudsk,hudts,job09,
              narpc,nocec,nocrc,pdbby,welin)
