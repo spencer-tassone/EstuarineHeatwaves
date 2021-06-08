@@ -31,10 +31,6 @@ nocrc <- fread("nocrcwq.csv", header = TRUE, stringsAsFactors = FALSE)
 pdbby <- fread("pdbbywq.csv", header = TRUE, stringsAsFactors = FALSE)
 welin <- fread("welinwq.csv", header = TRUE, stringsAsFactors = FALSE)
 
-# The data collected by the NERRS program does NOT observed daylight savings time. So to make sure all date/times are in the proper time zone (tz)
-# you must convert the DateTimeStamp into a time zone that does not observe daylight savings time. The SWMPr package suggests using the timezones
-# below for UTC offsets (-8 = West coast sites = Pacific/Pitairn, -5 = East coast sites = America/Jamaica, -4 = Puerto Rico = America/Virgin).
-
 acesp$DateTimeStamp <- as.POSIXct(acesp$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
 apaeb$DateTimeStamp <- as.POSIXct(apaeb$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
 apaes$DateTimeStamp <- as.POSIXct(apaes$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
@@ -61,7 +57,6 @@ rm(list=setdiff(ls(), "all"))
 
 dat <- all[, c(1,3,5,6,9:16,19:20)]
 rm(all)
-dat$DateTimeStamp <- as.POSIXct(dat$DateTimeStamp, tz = "UTC", "%Y-%m-%d %H:%M")
 dat <- dat[order(StationCode, DateTimeStamp)]
 dat$Depth <- as.numeric(dat$Depth)
 dat$pH <- as.numeric(dat$pH)
@@ -726,7 +721,7 @@ job09.clean <- job09.clean[,c(1,15,3,5,7,9,11,13)]
 job09.clean$year <- year(job09.clean$date)
 job09.clean <- job09.clean[job09.clean$year >= 1996 & job09.clean$year <= 2019,]
 job09.clean.30m <- job09.clean[1:176850,]
-job09.clean.15m <- job09.clean[176869:643428,]
+job09.clean.15m <- job09.clean[176867:643428,]
 a.30 <- as.data.frame(seq(from = min(job09.clean.30m$date), to = max(job09.clean.30m$date), by = 1800))
 names(a.30)[1] <- "date"
 a.15 <- as.data.frame(seq(from = min(job09.clean.15m$date), to = max(job09.clean.15m$date), by = 900))
@@ -1221,7 +1216,7 @@ apaeb_dat30 <- apaeb.hf[1:apaeb_split30,]
 apaes_dat30 <- apaes.hf[1:apaes_split30,]
 delbl_dat30 <- delbl.hf[1:delbl_split30]
 delsl_dat30 <- delsl.hf[1:delsl_split30]
-elkap_dat30 <- elkap.hf[66049:226608,]
+elkap_dat30 <- elkap.hf[66049:225847,]
 elksm_dat30 <- elksm.hf[63937:220368,]
 grbgb_dat30 <- grbgb.hf[1:grbgb_split30,]
 hudsk_dat30 <- hudsk.hf[1:hudsk_split30,]
@@ -1240,10 +1235,10 @@ cbvtc_dat15 <- cbvtc.hf[1:NROW(cbvtc.hf)]
 delbl_dat15 <- delbl.hf[delbl_split15:NROW(delbl.hf),]
 delsl_dat15 <- delsl.hf[delsl_split15:NROW(delsl.hf),]
 elkap_dat15_first <- elkap.hf[1:66048,]
-elkap_dat15_second <- elkap.hf[226609:NROW(elkap.hf),]
+elkap_dat15_second <- elkap.hf[227377:NROW(elkap.hf),]
 elksm_dat15_first <- elksm.hf[1:63936,]
 elksm_dat15_second <- elksm.hf[220369:NROW(elksm.hf),]
-grbgb_dat15 <- grbgb.hf[197961:NROW(grbgb.hf),]
+grbgb_dat15 <- grbgb.hf[186577:NROW(grbgb.hf),]
 hudsk_dat15 <- hudsk.hf[hudsk_split15:NROW(hudsk.hf),]
 hudts_dat15 <- hudts.hf[hudts_split15:NROW(hudts.hf),]
 job09_dat15 <- job09.hf[job09_split15:NROW(job09.hf),]
@@ -1257,14 +1252,14 @@ welin_dat15 <- welin.hf[welin_split15:NROW(welin.hf),]
 acesp_time30 <- acesp_dat30$date
 apaeb_time30 <- apaeb_dat30$date
 apaeb_time30_DO <- apaeb_dat30[1:185379,1]
-apaeb_time30_DO <- as.POSIXct(apaeb_time30_DO$date, tz = "UTC", "%Y-%m-%d %H:%M")
+apaeb_time30_DO <- as.POSIXct(apaeb_time30_DO$date, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
 apaes_time30 <- apaes_dat30$date
 apaes_time30_PH <- apaes_dat30[123:NROW(apaes_dat30),1]
-apaes_time30_PH <- as.POSIXct(apaes_time30_PH$date, tz = "UTC", "%Y-%m-%d %H:%M")
+apaes_time30_PH <- as.POSIXct(apaes_time30_PH$date, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
 delbl_time30 <- delbl_dat30$date
 delsl_time30 <- delsl_dat30$date
 delsl_time30_DO <- delsl_dat30[1608:NROW(delsl_dat30),1]
-delsl_time30_DO <- as.POSIXct(delsl_time30_DO$date, tz = "UTC", "%Y-%m-%d %H:%M")
+delsl_time30_DO <- as.POSIXct(delsl_time30_DO$date, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
 elkap_time30 <- elkap_dat30$date
 elksm_time30 <- elksm_dat30$date
 grbgb_time30 <- grbgb_dat30$date
@@ -1285,11 +1280,11 @@ delbl_time15 <- delbl_dat15$date
 delsl_time15 <- delsl_dat15$date
 elkap_time15_first <- elkap_dat15_first$date
 elkap_time15_second <- elkap_dat15_second$date
-elkap_time15_second_ph <- elkap_dat15_second[2481:NROW(elkap_dat15_second),1]
-elkap_time15_second_ph <- as.POSIXct(elkap_time15_second_ph$date)
+elkap_time15_second_ph <- elkap_dat15_second[2493:NROW(elkap_dat15_second),1]
+elkap_time15_second_ph <- as.POSIXct(elkap_time15_second_ph$date, tz = "Pacific/Pitcairn", "%Y-%m-%d %H:%M")
 elksm_time15_first <- elksm_dat15_first$date
-elksm_time15_first_do <- elksm_dat15_first[1:63780,1]
-elksm_time15_first_do <- as.POSIXct(elksm_time15_first_do$date)
+elksm_time15_first_do <- elksm_dat15_first[1:63794,1]
+elksm_time15_first_do <- as.POSIXct(elksm_time15_first_do$date, tz = "Pacific/Pitcairn", "%Y-%m-%d %H:%M")
 elksm_time15_second <- elksm_dat15_second$date
 grbgb_time15 <- grbgb_dat15$date
 hudsk_time15 <- hudsk_dat15$date
@@ -1366,7 +1361,7 @@ delbl_DO15 <- delbl_dat15$DO_mgl
 delsl_DO15 <- delsl_dat15$DO_mgl
 elkap_DO15_first <- elkap_dat15_first$DO_mgl
 elkap_DO15_second <- elkap_dat15_second$DO_mgl
-elksm_DO15_first <- elksm_dat15_first[1:63780,5]
+elksm_DO15_first <- elksm_dat15_first[1:63794,5]
 elksm_DO15_first <- as.numeric(elksm_DO15_first$DO_mgl)
 elksm_DO15_second <- elksm_dat15_second$DO_mgl
 grbgb_DO15 <- grbgb_dat15$DO_mgl
@@ -1404,7 +1399,7 @@ cbvtc_PH15 <- cbvtc_dat15$pH
 delbl_PH15 <- delbl_dat15$pH
 delsl_PH15 <- delsl_dat15$pH
 elkap_PH15_first <- elkap_dat15_first$pH
-elkap_PH15_second <- elkap_dat15_second[2481:NROW(elkap_dat15_second),7]
+elkap_PH15_second <- elkap_dat15_second[2493:NROW(elkap_dat15_second),7]
 elkap_PH15_second <- as.numeric(elkap_PH15_second$pH)
 elksm_PH15_first <- elksm_dat15_first$pH
 elksm_PH15_second <- elksm_dat15_second$pH
@@ -3685,6 +3680,9 @@ SlopeTable[49,5] <- round(summary(welin_temp_test)$r.squared,3)
 SlopeTable[50,5] <- round(summary(welin_do_test)$r.squared,3)
 SlopeTable[51,5] <- round(summary(welin_ph_test)$r.squared,3)
 
+setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
+# write.csv(SlopeTable, "SlopeTable.csv")
+
 rm(list=setdiff(ls(), c("acesp.hf","apaeb.hf","apaes.hf","cbvtc.hf",
                         "delbl.hf","delsl.hf","elkap.hf","elksm.hf",
                         "grbgb.hf","hudsk.hf","hudts.hf","job09.hf",
@@ -3858,6 +3856,7 @@ hw_dat <- rbind(saveDat_obsTemp,saveDat_noTide_corTemp)
 do_dat <- rbind(saveDat_obsDO,saveDat_noTide_corDO)
 ph_dat <- rbind(saveDat_obsPH,saveDat_noTide_corPH)
 
+setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
 cols <- c("Observed" = "#000000", "noTide" = "#ffffff")
 
 ggplot(hw_dat, aes(x=duration, color=class, fill = class)) +
@@ -4171,6 +4170,9 @@ colnames(Table1) <- c("Order","Station","Region","Salinity_mean","Salinity_SD",
                     "Depth_mean","TidalRange_mean","Total_EHW","Total_EHW(NoTide)",
                     "EHW_Diff","Total_LowDO","Total_LowDO(NoTide)","LowDO_Diff",
                     "Total_LowPH","Total_LowPH(NoTide)","LowPH_Diff")
+
+write.csv(Table1, 'Table1.csv')
+
 Table1_small <- Table1[,c(1:3,8:16)]
 Table1_small$Reserve <- substr(Table1_small$Station,0,3)
 Table1_small <- Table1_small[,c(1,13,2:12)]
@@ -4186,8 +4188,8 @@ t.test(Table1_small$Total_EHW,Table1_small$`Total_EHW(NoTide)`,paired = TRUE)
 t.test(Table1_small$Total_LowDO,Table1_small$`Total_LowDO(NoTide)`,paired = TRUE)
 t.test(Table1_small$Total_LowPH,Table1_small$`Total_LowPH(NoTide)`,paired = TRUE)
 
-setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
-write.csv(Table1, "Table1.csv")
+# setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
+# write.csv(Table1, "Table1.csv")
 
 ### Replace mean salinity NA values with mean of station salinity
 
@@ -4375,7 +4377,7 @@ x4$Sal.class <- "Polyhaline"
 x5$Sal.class <- "Seawater"
 salinity <- rbind(x1,x2,x3,x4,x5)
 mhw_salinity <- merge(mhw_salinity, salinity, by = c("Year","Sal.class"), all = TRUE)
-mhw_salinity[c(27,40,42,70,87,91,95,120),3:7] <- 0
+mhw_salinity[c(27,40,42,70,87,95,120),3:7] <- 0
 
 do_region <- LDO %>%
   group_by(Year, Region) %>%
@@ -4526,7 +4528,7 @@ x4$Sal.class <- "Polyhaline"
 x5$Sal.class <- "Seawater"
 salinity <- rbind(x1,x2,x3,x4,x5)
 ph_salinity <- merge(ph_salinity, salinity, by = c("Year","Sal.class"), all = TRUE)
-ph_salinity[c(22,56,62,91),3:7] <- 0
+ph_salinity[c(22,62,91),3:7] <- 0
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
 x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -6082,13 +6084,10 @@ for(i in 1:length(ee)){
 setwd("~/School/Lab Work/Dissertation/Projects/MarineHeatwave/Meteorlogical")
 
 dat <- fread("AllStation_ATM_Temp_dirty.csv")
-dat$DateTimeStamp <- as.POSIXct(dat$DateTimeStamp, tz = "UTC", "%Y-%m-%d %H:%M")
-dat$Year <- year(dat$DateTimeStamp)
-dat2 <- dat[dat$Year >= 2002 & dat$Year<= 2019,]
 
 # For sites that have switched locations, need to combine data
-grb1 <- dat2[, c(1, 40:41)]
-grb2 <- dat2[, c(1, 45:46)]
+grb1 <- dat[, c(1,40:41)]
+grb2 <- dat[, c(1,45:46)]
 grb1$ATemp <- grb1$GRBGBMET_ATemp
 grb2$ATemp <- grb2$GRBGLMET_ATemp
 grb1$Flag <- grb1$GRBGBMET_F_ATemp
@@ -6098,18 +6097,57 @@ grb2 <- grb2[-c(1:114879),-c(2:3)]
 
 # Create data frame for each site
 
-ace_dirty <- dat2[, c(1, 10:11)]
-apa_dirty <- dat2[, c(1, 5:6)]
-cbv_dirty <- dat2[, c(1, 20:21)]
-del_dirty <- dat2[, c(1, 25:26)]
-elk_dirty <- dat2[, c(1, 30:31)]
+ace_dirty <- dat[,c(1, 10:11)]
+apa_dirty <- dat[,c(1, 5:6)]
+cbv_dirty <- dat[,c(1, 20:21)]
+del_dirty <- dat[,c(1, 25:26)]
+elk_dirty <- dat[,c(1, 30:31)]
 grb_dirty <- rbind(grb1, grb2)
-hud_dirty <- dat2[, c(1, 60:61)]
-job_dirty <- dat2[, c(1, 75:76)]
-nar_dirty <- dat2[, c(1, 105:106)]
-noc_dirty <- dat2[, c(1, 110:111)]
-pdb_dirty <- dat2[, c(1, 125,126)]
-wel_dirty <- dat2[, c(1, 180:181)]
+hud_dirty <- dat[,c(1, 60:61)]
+job_dirty <- dat[,c(1, 75:76)]
+nar_dirty <- dat[,c(1, 105:106)]
+noc_dirty <- dat[,c(1, 110:111)]
+pdb_dirty <- dat[,c(1, 125,126)]
+wel_dirty <- dat[,c(1, 180:181)]
+
+ace_dirty$DateTimeStamp <- as.POSIXct(ace_dirty$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+apa_dirty$DateTimeStamp <- as.POSIXct(apa_dirty$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+cbv_dirty$DateTimeStamp <- as.POSIXct(cbv_dirty$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+del_dirty$DateTimeStamp <- as.POSIXct(del_dirty$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+elk_dirty$DateTimeStamp <- as.POSIXct(elk_dirty$DateTimeStamp, tz = "Pacific/Pitcairn", "%Y-%m-%d %H:%M")
+grb_dirty$DateTimeStamp <- as.POSIXct(grb_dirty$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+hud_dirty$DateTimeStamp <- as.POSIXct(hud_dirty$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+job_dirty$DateTimeStamp <- as.POSIXct(job_dirty$DateTimeStamp, tz = "America/Virgin", "%Y-%m-%d %H:%M")
+nar_dirty$DateTimeStamp <- as.POSIXct(nar_dirty$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+noc_dirty$DateTimeStamp <- as.POSIXct(noc_dirty$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+pdb_dirty$DateTimeStamp <- as.POSIXct(pdb_dirty$DateTimeStamp, tz = "Pacific/Pitcairn", "%Y-%m-%d %H:%M")
+wel_dirty$DateTimeStamp <- as.POSIXct(wel_dirty$DateTimeStamp, tz = "America/Jamaica", "%Y-%m-%d %H:%M")
+
+ace_dirty$Year <- year(ace_dirty$DateTimeStamp)
+apa_dirty$Year <- year(apa_dirty$DateTimeStamp)
+cbv_dirty$Year <- year(cbv_dirty$DateTimeStamp)
+del_dirty$Year <- year(del_dirty$DateTimeStamp)
+elk_dirty$Year <- year(elk_dirty$DateTimeStamp)
+grb_dirty$Year <- year(grb_dirty$DateTimeStamp)
+hud_dirty$Year <- year(hud_dirty$DateTimeStamp)
+job_dirty$Year <- year(job_dirty$DateTimeStamp)
+nar_dirty$Year <- year(nar_dirty$DateTimeStamp)
+noc_dirty$Year <- year(noc_dirty$DateTimeStamp)
+pdb_dirty$Year <- year(pdb_dirty$DateTimeStamp)
+wel_dirty$Year <- year(wel_dirty$DateTimeStamp)
+
+ace_dirty <- ace_dirty[ace_dirty$Year >= 2002 & ace_dirty$Year<= 2019,]
+apa_dirty <- apa_dirty[apa_dirty$Year >= 2002 & apa_dirty$Year<= 2019,]
+cbv_dirty <- cbv_dirty[cbv_dirty$Year >= 2002 & cbv_dirty$Year<= 2019,]
+del_dirty <- del_dirty[del_dirty$Year >= 2002 & del_dirty$Year<= 2019,]
+elk_dirty <- elk_dirty[elk_dirty$Year >= 2002 & elk_dirty$Year<= 2019,]
+grb_dirty <- grb_dirty[grb_dirty$Year >= 2002 & grb_dirty$Year<= 2019,]
+hud_dirty <- hud_dirty[hud_dirty$Year >= 2002 & hud_dirty$Year<= 2019,]
+job_dirty <- job_dirty[job_dirty$Year >= 2002 & job_dirty$Year<= 2019,]
+nar_dirty <- nar_dirty[nar_dirty$Year >= 2002 & nar_dirty$Year<= 2019,]
+noc_dirty <- noc_dirty[noc_dirty$Year >= 2002 & noc_dirty$Year<= 2019,]
+pdb_dirty <- pdb_dirty[pdb_dirty$Year >= 2002 & pdb_dirty$Year<= 2019,]
+wel_dirty <- wel_dirty[wel_dirty$Year >= 2002 & wel_dirty$Year<= 2019,]
 
 # View flag codes and number of data points per flag codes
 
@@ -6178,52 +6216,52 @@ apa_clean$APAEBMET_ATemp[apa_clean$APAEBMET_ATemp <= -20] <- NA
 # Calculate daily averages from 15-min. observations
 
 ace_clean$date <- ace_clean$DateTimeStamp
-ace_clean <- ace_clean[,2:4]
-ace_clean <- ace_clean[, c(3,1,2)]
+ace_clean <- ace_clean[,2:5]
+ace_clean <- ace_clean[, c(4,3,1,2)]
 
 apa_clean$date <- apa_clean$DateTimeStamp
-apa_clean <- apa_clean[,2:4]
-apa_clean <- apa_clean[, c(3,1,2)]
+apa_clean <- apa_clean[,2:5]
+apa_clean <- apa_clean[, c(4,3,1,2)]
 
 cbv_clean$date <- cbv_clean$DateTimeStamp
-cbv_clean <- cbv_clean[,2:4]
-cbv_clean <- cbv_clean[,c(3,1,2)]
+cbv_clean <- cbv_clean[,2:5]
+cbv_clean <- cbv_clean[,c(4,3,1,2)]
 
 del_clean$date <- del_clean$DateTimeStamp
-del_clean <- del_clean[,2:4]
-del_clean <- del_clean[,c(3,1,2)]
+del_clean <- del_clean[,2:5]
+del_clean <- del_clean[,c(4,3,1,2)]
 
 elk_clean$date <- elk_clean$DateTimeStamp
-elk_clean <- elk_clean[,2:4]
-elk_clean <- elk_clean[,c(3,1,2)]
+elk_clean <- elk_clean[,2:5]
+elk_clean <- elk_clean[,c(4,3,1,2)]
 
 grb_clean$date <- grb_clean$DateTimeStamp
-grb_clean <- grb_clean[,2:4]
-grb_clean <- grb_clean[,c(3,1,2)]
+grb_clean <- grb_clean[,2:5]
+grb_clean <- grb_clean[,c(4,3,1,2)]
 
 hud_clean$date <- hud_clean$DateTimeStamp
-hud_clean <- hud_clean[,2:4]
-hud_clean <- hud_clean[,c(3,1,2)]
+hud_clean <- hud_clean[,2:5]
+hud_clean <- hud_clean[,c(4,3,1,2)]
 
 job_clean$date <- job_clean$DateTimeStamp
-job_clean <- job_clean[,2:4]
-job_clean <- job_clean[,c(3,1,2)]
+job_clean <- job_clean[,2:5]
+job_clean <- job_clean[,c(4,3,1,2)]
 
 nar_clean$date <- nar_clean$DateTimeStamp
-nar_clean <- nar_clean[,2:4]
-nar_clean <- nar_clean[,c(3,1,2)]
+nar_clean <- nar_clean[,2:5]
+nar_clean <- nar_clean[,c(4,3,1,2)]
 
 noc_clean$date <- noc_clean$DateTimeStamp
-noc_clean <- noc_clean[,2:4]
-noc_clean <- noc_clean[,c(3,1,2)]
+noc_clean <- noc_clean[,2:5]
+noc_clean <- noc_clean[,c(4,3,1,2)]
 
 pdb_clean$date <- pdb_clean$DateTimeStamp
-pdb_clean <- pdb_clean[,2:4]
-pdb_clean <- pdb_clean[,c(3,1,2)]
+pdb_clean <- pdb_clean[,2:5]
+pdb_clean <- pdb_clean[,c(4,3,1,2)]
 
 wel_clean$date <- wel_clean$DateTimeStamp
-wel_clean <- wel_clean[,2:4]
-wel_clean <- wel_clean[,c(3,1,2)]
+wel_clean <- wel_clean[,2:5]
+wel_clean <- wel_clean[,c(4,3,1,2)]
 
 a.15 <- as.data.frame(seq(from = min(ace_clean$date), to = max(ace_clean$date), by = 900))
 names(a.15)[1] <- "date"
@@ -6336,22 +6374,22 @@ noc_clean_dailyAVG$site <- "noc"
 pdb_clean_dailyAVG$site <- "pdb"
 wel_clean_dailyAVG$site <- "wel"
 
-names(ace_clean_dailyAVG)[2] <- "ATemp"
-names(apa_clean_dailyAVG)[2] <- "ATemp"
-names(cbv_clean_dailyAVG)[2] <- "ATemp"
-names(del_clean_dailyAVG)[2] <- "ATemp"
-names(elk_clean_dailyAVG)[2] <- "ATemp"
-names(grb_clean_dailyAVG)[2] <- "ATemp"
-names(hud_clean_dailyAVG)[2] <- "ATemp"
-names(job_clean_dailyAVG)[2] <- "ATemp"
-names(nar_clean_dailyAVG)[2] <- "ATemp"
-names(noc_clean_dailyAVG)[2] <- "ATemp"
-names(pdb_clean_dailyAVG)[2] <- "ATemp"
-names(wel_clean_dailyAVG)[2] <- "ATemp"
+names(ace_clean_dailyAVG)[3] <- "ATemp"
+names(apa_clean_dailyAVG)[3] <- "ATemp"
+names(cbv_clean_dailyAVG)[3] <- "ATemp"
+names(del_clean_dailyAVG)[3] <- "ATemp"
+names(elk_clean_dailyAVG)[3] <- "ATemp"
+names(grb_clean_dailyAVG)[3] <- "ATemp"
+names(hud_clean_dailyAVG)[3] <- "ATemp"
+names(job_clean_dailyAVG)[3] <- "ATemp"
+names(nar_clean_dailyAVG)[3] <- "ATemp"
+names(noc_clean_dailyAVG)[3] <- "ATemp"
+names(pdb_clean_dailyAVG)[3] <- "ATemp"
+names(wel_clean_dailyAVG)[3] <- "ATemp"
 
 all_ATM_dailyAVG <- rbind(ace_clean_dailyAVG, apa_clean_dailyAVG, cbv_clean_dailyAVG, del_clean_dailyAVG,
-             elk_clean_dailyAVG, grb_clean_dailyAVG, hud_clean_dailyAVG, job_clean_dailyAVG,
-             nar_clean_dailyAVG, noc_clean_dailyAVG, pdb_clean_dailyAVG, wel_clean_dailyAVG)
+                          elk_clean_dailyAVG, grb_clean_dailyAVG, hud_clean_dailyAVG, job_clean_dailyAVG,
+                          nar_clean_dailyAVG, noc_clean_dailyAVG, pdb_clean_dailyAVG, wel_clean_dailyAVG)
 
 all_ATM_dailyAVG$date <- as.Date(all_ATM_dailyAVG$date)
 
@@ -7007,8 +7045,6 @@ df_mhw3$welin <- df_mhw3$welin %>%
   rowwise() %>%
   mutate(tripleWhammy = any(df_lowDO$welin$start %within% interval) & any(df_lowPH$welin$start %within% interval))
 
-detach("package:lubridate", unload = TRUE)
-
 tw_acesp <- data.frame(sum(table(df_mhw3$acesp$tripleWhammy)["TRUE"]))
 tw_acesp$Station <- "acesp"
 names(tw_acesp)[1] <- "TotalEvents"
@@ -7210,7 +7246,7 @@ Fig3_table %>%
         axis.title.x = element_text(vjust = -9),
         legend.title = element_blank(),
         legend.direction = "vertical",
-        legend.position = c(0.80,0.9),
+        legend.position = c(0.80,0.91),
         legend.background = element_blank()) +
   coord_cartesian(clip = "off", ylim = c(0, NA)) +
   annotate("text", x = c(2.5,5.5,8,10,11.5), y = -10, label = c("Northeast", "Mid. Atl.", "Southeast","GoM","West"), size = 5) +
@@ -7226,6 +7262,7 @@ ahwMHW$Region[ahwMHW$Reserve%in%c("pdb","elk")] <- "West"
 round(mean(ahwMHW$Proportion_CoOccurrance),0)
 min(ahwMHW$Proportion_CoOccurrance)
 max(ahwMHW$Proportion_CoOccurrance)
+
 ahwMHW %>%
   group_by(Region) %>%
   summarise(Mean = round(mean(Proportion_CoOccurrance),0),
@@ -8675,8 +8712,8 @@ all_sites %>%
   summarise(lower = min(Avg.),
             upper = max(Avg.))
 all_sites_do %>%
-  summarise(Mean = mean(Avg.),
-            SD = round(sd(Avg.),0))
+  summarise(Mean = round(mean(Avg., na.rm = TRUE),0),
+            SD = round(sd(Avg., na.rm = TRUE),0))
 all_sites_pH %>%
   summarise(Mean = round(mean(Avg., na.rm = TRUE),0),
             SD = round(sd(Avg., na.rm = TRUE),0))
@@ -8913,11 +8950,11 @@ ph_MKSS_results <- left_join(ph_MKSS_results,fdr_table, by = c("TestType","Rank"
 ph_MKSS_results$SigTest <- ifelse(ph_MKSS_results$p.val < ph_MKSS_results$FDR_0.1,"Sig","NS")
 View(ph_MKSS_results)
 
-mhw_MKSS_results_sig <- mhw_MKSS_results[c(1:3,6,26:31,51),]
+mhw_MKSS_results_sig <- mhw_MKSS_results[c(1:3,6,51),]
 mhw_MKSS_results_sig$Test <- "mhw"
-do_MKSS_results_sig <- do_MKSS_results[c(1:3,6:11,26:29,51:57),]
+do_MKSS_results_sig <- do_MKSS_results[c(1:4,6,26:30,51:58),]
 do_MKSS_results_sig$Test <- "lowDO"
-ph_MKSS_results_sig <- ph_MKSS_results[c(1,6:12,51:58),]
+ph_MKSS_results_sig <- ph_MKSS_results[c(1,6:10,51:58),]
 ph_MKSS_results_sig$Test <- "lowPH"
 
 sig_MKSS_results <- rbind(mhw_MKSS_results_sig,do_MKSS_results_sig,ph_MKSS_results_sig)
@@ -9480,9 +9517,9 @@ Fig6D <- ggplot(data = hw_sum, aes(x = Year, y = TotalDuration)) +
   xlab("Year") +
   scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
   ylab("Total Estuarine HW Days") +
-  annotate("text", x = 1999.99, y = 800, label = "y = 17.6x - 35059", size = 5) +
+  annotate("text", x = 1999.99, y = 800, label = "y = 17.1x - 34051", size = 5) +
   annotate("text", x = 1999.75, y = 720,
-           label = "paste(Adj.R ^ 2, \" = 0.36\")", parse = TRUE, size = 5) +
+           label = "paste(Adj.R ^ 2, \" = 0.35\")", parse = TRUE, size = 5) +
   annotate("text", x = 1999.75, y = 640, label = "p-value = 0.001", size = 5) +
   annotate("text", x = 2019.5, y = 800, label = "(d", size = 6) +
   theme_bw() +
@@ -9503,7 +9540,7 @@ Fig6E <- ggplot(data = lowDO_sum, aes(x = Year, y = TotalDuration)) +
   ylab("Total Low DO Days") +
   annotate("text", x = 1999.99, y = 635, label = "y = -4.51x + 9372", size = 5) +
   annotate("text", x = 2009.5, y = 635,
-           label = "paste(Adj.R ^ 2, \" = 0.03\")", parse = TRUE, size = 5) +
+           label = "paste(Adj.R ^ 2, \" = 0.04\")", parse = TRUE, size = 5) +
   annotate("text", x = 1999.15, y = 585, label = "p-value > 0.05", size = 5) +
   annotate("text", x = 2019.5, y = 635, label = "(e", size = 6) +
   theme_bw() +
@@ -9522,7 +9559,7 @@ Fig6F <- ggplot(data = lowPH_sum, aes(x = Year, y = TotalDuration)) +
   xlab("Year") +
   scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
   ylab("Total Low pH Days") +
-  annotate("text", x = 2014, y = 1200, label = "y = -26.65x + 53926", size = 5) +
+  annotate("text", x = 2014, y = 1200, label = "y = -26.47x + 53576", size = 5) +
   annotate("text", x = 2013.5, y = 1075,
            label = "paste(Adj.R ^ 2, \" = 0.45\")", parse = TRUE, size = 5) +
   annotate("text", x = 2013.5, y = 950, label = "p-value < 0.001", size = 5) +
@@ -9813,14 +9850,14 @@ SI_Table1 <- left_join(SI_Table1, df_station_lowPH, by = "site")
 SI_Table1$Order <- c(11,13,14,8,6,7,16,17,2,3,4,12,5,9,10,15,1)
 SI_Table1 <- SI_Table1[,c(11,1:10)]
 View(SI_Table1)
-write.csv(SI_Table1, 'SI_Table1.csv')
+# write.csv(SI_Table1, 'SI_Table1.csv')
 
 ### SI Figure 1: width = 1500 height = 650
 
 #SI_Fig1A: Atmospheric temperature trends
 
 all_ATM_dailyAVG$Year <- year(all_ATM_dailyAVG$date)
-names(all_ATM_dailyAVG)[3] <- "Reserve"
+names(all_ATM_dailyAVG)[4] <- "Reserve"
 
 annual_Atemp <- all_ATM_dailyAVG %>%
   group_by(Year, Reserve) %>%
@@ -10090,7 +10127,6 @@ SI_Fig1a <- SI_Fig1A %>%
   ggplot(aes(x = Reserve, y = MeanSlope)) +
   geom_col(aes(fill = Type), position = "dodge", color = "black") +
   scale_fill_manual(values = cols) +
-  geom_errorbar(aes(fill = Type, ymin = lower, ymax = upper), position = "dodge", width = 0.9, color = "black") +
   labs(y=expression(paste("Slope (°C  ", yr^-1,")")),
        x = "NERRS Reserves & Regions") +
   scale_y_continuous(breaks = seq(-0.04,0.14, by = 0.02)) +
@@ -10468,8 +10504,8 @@ g3 <- ggplot(data = do_table, aes(x = Depth, y = Frequency)) +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
            label.x = 3, label.y = 1.3, size = 5)
 
-# model <- lm(Avg.Duration~TideRange, data = do_table)
-# summary(model)
+model <- lm(Avg.Duration~TideRange, data = do_table)
+summary(model)
 
 gg1 <- ggplot(data = do_table, aes(x = TideRange, y = Avg.Duration)) +
   stat_smooth(method = 'lm', color = 'black') +
@@ -10477,7 +10513,7 @@ gg1 <- ggplot(data = do_table, aes(x = TideRange, y = Avg.Duration)) +
   labs(y = 'Mean low DO Duration (days)',
        x = 'Mean Tidal Range (m)') +
   annotate("text", x = 0.5 , y = 11.9,
-           label = 'Slope = 1.38 ± 0.50',
+           label = 'Slope = 1.41 ± 0.50',
            size = 5, fontface = 1) +
   coord_cartesian(ylim = c(7,13)) +
   theme_bw() +
@@ -10561,7 +10597,6 @@ p3 <- ggplot(data = do_table, aes(x = Habitat, y = Frequency)) +
         axis.text.y = element_text(size = 16, color = 'black'))
 
 # save image as height = 1500, width = 1500
-
 ggarrange(g1,g2,g3,gg1,gg2,gg3,p1,p2,p3, nrow = 3, ncol = 3)
 
 # SI Figure 4: Linear Regression & boxplot for Low pH characteristics
