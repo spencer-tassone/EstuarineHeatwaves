@@ -4226,22 +4226,22 @@ LPH$Sal.class <- ifelse(LPH$MeanSalinity >= 30, "Seawater",
                                       ifelse(LPH$MeanSalinity >= 0.5, "Oligohaline",
                                              ifelse(LPH$MeanSalinity <= 0.5, "TidalFresh", NA)))))
 
-MHW$Year <- year(MHW$date_start)
-MHW$Month <- month(MHW$date_start)
+MHW$Year <- year(MHW$date_peak)
+MHW$Month <- month(MHW$date_peak)
 MHW$Season <- ifelse(MHW$Month >=12, "Winter",
                      ifelse(MHW$Month >= 9, "Fall",
                             ifelse(MHW$Month >= 6, "Summer",
                                    ifelse(MHW$Month >= 3, "Spring",
                                           ifelse(MHW$Month >=1, "Winter", NA)))))
-LDO$Year <- year(LDO$date_start)
-LDO$Month <- month(LDO$date_start)
+LDO$Year <- year(LDO$date_peak)
+LDO$Month <- month(LDO$date_peak)
 LDO$Season <- ifelse(LDO$Month >=12, "Winter",
                      ifelse(LDO$Month >= 9, "Fall",
                             ifelse(LDO$Month >= 6, "Summer",
                                    ifelse(LDO$Month >= 3, "Spring",
                                           ifelse(LDO$Month >=1, "Winter", NA)))))
-LPH$Year <- year(LPH$date_start)
-LPH$Month <- month(LPH$date_start)
+LPH$Year <- year(LPH$date_peak)
+LPH$Month <- month(LPH$date_peak)
 LPH$Season <- ifelse(LPH$Month >=12, "Winter",
                      ifelse(LPH$Month >= 9, "Fall",
                             ifelse(LPH$Month >= 6, "Summer",
@@ -4302,6 +4302,25 @@ LPH$Region <- ifelse(LPH$Station == "pdbby", "West",
                                                                                                                               ifelse(LPH$Station == "welin", "NE", NA)))))))))))))))))
 
 
+
+EHW_SalTable <- MHW %>%
+  group_by(Sal.class) %>%
+  summarise(MeanDuration = round(mean(duration)),
+            SEduration = round(sd(duration)/sqrt(n()),2),
+            MeanCuInt =  round(mean(intensity_mean_relThresh),2),
+            SEcuInt = round(sd(intensity_mean_relThresh)/sqrt(n()),2),
+            MeanOnset = round(mean(rate_onset, na.rm = T),2),
+            SEonset = round(sd(rate_onset, na.rm = T)/sqrt(n()),2),
+            MeanDecline = round(mean(rate_decline, na.rm = T),2),
+            SEdecline = round(sd(rate_decline, na.rm = T)/sqrt(n()),2),
+            Frequency = round(length(duration)/n_distinct(Station)),
+            Nevents = n(),
+            Nstations = n_distinct(Station))
+EHW_SalTable$Order <- c(3,2,4,5,1)
+EHW_SalTable <- EHW_SalTable[,c(13,1:12)]
+EHW_SalTable <- EHW_SalTable %>%
+  arrange(-desc(Order))
+View(EHW_SalTable)
 
 mhw_region <- MHW %>%
   group_by(Year, Region) %>%
@@ -4378,6 +4397,11 @@ x5$Sal.class <- "Seawater"
 salinity <- rbind(x1,x2,x3,x4,x5)
 mhw_salinity <- merge(mhw_salinity, salinity, by = c("Year","Sal.class"), all = TRUE)
 mhw_salinity[c(27,40,42,70,87,95,120),3:7] <- 0
+
+LDO_AnnualTable <- LDO %>%
+  group_by(Year) %>%
+  summarise(Nevents = n())
+View(LDO_AnnualTable)
 
 do_region <- LDO %>%
   group_by(Year, Region) %>%
@@ -6610,10 +6634,6 @@ lowPH_total_MHWevents <- sum(nrow(df_lowPH$acesp),
                              nrow(df_lowPH$nocrc),
                              nrow(df_lowPH$pdbby),
                              nrow(df_lowPH$welin))
-
-round(((MHW_total_InRange/MHW_total_events)*100), digits = 0)
-round(((lowDO_total_InRange/lowDO_total_MHWevents)*100), digits = 0)
-round(((lowPH_total_InRange/lowPH_total_MHWevents)*100), digits = 0)
 
 df_AHWMHW <- data.frame(matrix(ncol = 4, nrow = 17))
 x <- c("Station", "NumCoOccurance", "TotalEvents", "Proportion_CoOccurrance(%)")
@@ -8854,7 +8874,7 @@ AHW_table %>%
   summarise(Mean = round(mean(NumAHW_Events),0),
             SD = round(sd(NumAHW_Events),0))
 
-### Table 2: 10% False Discovery Rate (FDR: http://www.biostathandbook.com/multiplecomparisons.html)
+### Table 2: 10% False Discovery Rate (see link for details: http://www.biostathandbook.com/multiplecomparisons.html)
 
 fdr_table <- data.frame(matrix(ncol = 3, nrow = 75))
 x <- c("TestType", "Rank", "FDR_0.1")
@@ -8950,9 +8970,9 @@ ph_MKSS_results <- left_join(ph_MKSS_results,fdr_table, by = c("TestType","Rank"
 ph_MKSS_results$SigTest <- ifelse(ph_MKSS_results$p.val < ph_MKSS_results$FDR_0.1,"Sig","NS")
 View(ph_MKSS_results)
 
-mhw_MKSS_results_sig <- mhw_MKSS_results[c(1:3,6,51),]
+mhw_MKSS_results_sig <- mhw_MKSS_results[c(1:4,6,51),]
 mhw_MKSS_results_sig$Test <- "mhw"
-do_MKSS_results_sig <- do_MKSS_results[c(1:4,6,26:30,51:58),]
+do_MKSS_results_sig <- do_MKSS_results[c(1:4,26:29,51:53),]
 do_MKSS_results_sig$Test <- "lowDO"
 ph_MKSS_results_sig <- ph_MKSS_results[c(1,6:10,51:58),]
 ph_MKSS_results_sig$Test <- "lowPH"
@@ -8961,8 +8981,8 @@ sig_MKSS_results <- rbind(mhw_MKSS_results_sig,do_MKSS_results_sig,ph_MKSS_resul
 
 #Table 2: Atmospheric Heatwaves (AHW)
 
-AHW$Year <- year(AHW$date_start)
-AHW$Month <- month(AHW$date_start)
+AHW$Year <- year(AHW$date_peak)
+AHW$Month <- month(AHW$date_peak)
 AHW$Season <- ifelse(AHW$Month >=12, "Winter",
                      ifelse(AHW$Month >= 9, "Fall",
                             ifelse(AHW$Month >= 6, "Summer",
@@ -8980,6 +9000,44 @@ AHW$Region <- ifelse(AHW$StationCode == "pdb", "West",
                                                                              ifelse(AHW$StationCode == "hud", "NE",
                                                                                     ifelse(AHW$StationCode == "nar", "NE",
                                                                                            ifelse(AHW$StationCode == "wel", "NE", NA))))))))))))
+
+AHW_SeasonTable <- AHW %>%
+  group_by(Season) %>%
+  summarise(MeanDuration = round(mean(duration)),
+            SEduration = round(sd(duration)/sqrt(n()),2),
+            MeanCuInt =  round(mean(intensity_mean_relThresh),2),
+            SEcuInt = round(sd(intensity_mean_relThresh)/sqrt(n()),2),
+            MeanOnset = round(mean(rate_onset, na.rm = T),2),
+            SEonset = round(sd(rate_onset, na.rm = T)/sqrt(n()),2),
+            MeanDecline = round(mean(rate_decline, na.rm = T),2),
+            SEdecline = round(sd(rate_decline, na.rm = T)/sqrt(n()),2),
+            Frequency = round(length(duration)/n_distinct(StationCode)),
+            Nevents = n(),
+            Nreserves = n_distinct(StationCode))
+AHW_SeasonTable$Order <- c(4,2,3,1)
+AHW_SeasonTable <- AHW_SeasonTable[,c(13,1:12)]
+AHW_SeasonTable <- AHW_SeasonTable %>%
+  arrange(-desc(Order))
+View(AHW_SeasonTable)
+
+AHW_RegionTable <- AHW %>%
+  group_by(Region) %>%
+  summarise(MeanDuration = round(mean(duration)),
+            SEduration = round(sd(duration)/sqrt(n()),2),
+            MeanCuInt =  round(mean(intensity_mean_relThresh),2),
+            SEcuInt = round(sd(intensity_mean_relThresh)/sqrt(n()),2),
+            MeanOnset = round(mean(rate_onset, na.rm = T),2),
+            SEonset = round(sd(rate_onset, na.rm = T)/sqrt(n()),2),
+            MeanDecline = round(mean(rate_decline, na.rm = T),2),
+            SEdecline = round(sd(rate_decline, na.rm = T)/sqrt(n()),2),
+            Frequency = round(length(duration)/n_distinct(StationCode)),
+            Nevents = n(),
+            Nreserves = n_distinct(StationCode))
+AHW_RegionTable$Order <- c(4,2,1,3,5)
+AHW_RegionTable <- AHW_RegionTable[,c(13,1:12)]
+AHW_RegionTable <- AHW_RegionTable %>%
+  arrange(-desc(Order))
+View(AHW_RegionTable)
 
 ahw_region <- AHW %>%
   group_by(Year, Region) %>%
@@ -9412,7 +9470,7 @@ View(ahw_MKSS_results)
 
 sig_MKSS_results <- rbind(mhw_MKSS_results_sig,do_MKSS_results_sig,ph_MKSS_results_sig)
 setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
-write.csv(sig_MKSS_results,'Table2_v2.csv')
+write.csv(sig_MKSS_results,'Table2.csv')
 
 ### Figure 6: Export all figures as width = 1000 height = 1300
 
@@ -9517,7 +9575,7 @@ Fig6D <- ggplot(data = hw_sum, aes(x = Year, y = TotalDuration)) +
   xlab("Year") +
   scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
   ylab("Total Estuarine HW Days") +
-  annotate("text", x = 1999.99, y = 800, label = "y = 17.1x - 34051", size = 5) +
+  annotate("text", x = 2000.5, y = 800, label = "y = 17.12x - 34051", size = 5) +
   annotate("text", x = 1999.75, y = 720,
            label = "paste(Adj.R ^ 2, \" = 0.35\")", parse = TRUE, size = 5) +
   annotate("text", x = 1999.75, y = 640, label = "p-value = 0.001", size = 5) +
@@ -9538,7 +9596,7 @@ Fig6E <- ggplot(data = lowDO_sum, aes(x = Year, y = TotalDuration)) +
   xlab("Year") +
   scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
   ylab("Total Low DO Days") +
-  annotate("text", x = 1999.99, y = 635, label = "y = -4.51x + 9372", size = 5) +
+  annotate("text", x = 1999.99, y = 635, label = "y = -4.79x + 9939", size = 5) +
   annotate("text", x = 2009.5, y = 635,
            label = "paste(Adj.R ^ 2, \" = 0.04\")", parse = TRUE, size = 5) +
   annotate("text", x = 1999.15, y = 585, label = "p-value > 0.05", size = 5) +
@@ -10129,7 +10187,7 @@ SI_Fig1a <- SI_Fig1A %>%
   scale_fill_manual(values = cols) +
   labs(y=expression(paste("Slope (°C  ", yr^-1,")")),
        x = "NERRS Reserves & Regions") +
-  scale_y_continuous(breaks = seq(-0.04,0.14, by = 0.02)) +
+  scale_y_continuous(breaks = seq(-0.12,0.14, by = 0.02)) +
   annotate("text", x = 1, y = 0.14, label = "a)", size = 6) +
   theme_bw() +
   theme(plot.margin = margin(5,5,55,5,"pt"),
@@ -10142,9 +10200,9 @@ SI_Fig1a <- SI_Fig1A %>%
         legend.direction = "vertical",
         legend.position = c(0.86,0.95),
         legend.background = element_blank()) +
-  coord_cartesian(clip = "off", ylim = c(-0.04, 0.14)) +
-  annotate("text", x = c(2.5,5.5,8,10,11.5), y = -0.068, label = c("Northeast", "Mid. Atl.", "Southeast","GoM","West"), size = 5) +
-  annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = 0, yend = -0.078)
+  coord_cartesian(clip = "off", ylim = c(-0.12, 0.14)) +
+  annotate("text", x = c(2.5,5.5,8,10,11.5), y = -0.165, label = c("Northeast", "Mid. Atl.", "Southeast","GoM","West"), size = 5) +
+  annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = 0, yend = -0.18, color = "black")
 
 SI_Fig1b <- SI_Fig1B %>%
   arrange(-desc(order)) %>%
@@ -10156,7 +10214,7 @@ SI_Fig1b <- SI_Fig1B %>%
   scale_fill_manual(values = cols) +
   labs(y=expression(paste("Slope (°C  ", yr^-1,")")),
        x = "NERRS Reserves & Regions") +
-  scale_y_continuous(breaks = seq(-0.04,0.14, by = 0.02)) +
+  scale_y_continuous(breaks = seq(-0.12,0.14, by = 0.02)) +
   annotate("text", x = 1, y = 0.14, label = "b)", size = 6) +
   theme_bw() +
   theme(plot.margin = margin(5,5,55,5,"pt"),
@@ -10168,11 +10226,16 @@ SI_Fig1b <- SI_Fig1B %>%
         axis.title.x = element_text(vjust = -12),
         legend.title = element_blank(),
         legend.position = "none") +
-  coord_cartesian(clip = "off", ylim = c(-0.04, 0.14)) +
-  annotate("text", x = c(2.5,5.5,8,10,11.5), y = -0.068, label = c("Northeast", "Mid. Atl.", "Southeast","GoM","West"), size = 5) +
-  annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = 0, yend = -0.078)
+  coord_cartesian(clip = "off", ylim = c(-0.12, 0.14)) +
+  annotate("text", x = c(2.5,5.5,8,10,11.5), y = -0.165, label = c("Northeast", "Mid. Atl.", "Southeast","GoM","West"), size = 5) +
+  annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = 0, yend = -0.18, color = "black")
 
-ggarrange(SI_Fig1a,SI_Fig1b, nrow = 1)
+SI_Fig1 <- ggarrange(SI_Fig1a,SI_Fig1b, nrow = 1)
+ggsave("SI_Fig1.png",SI_Fig1,
+       width = 35,
+       height = 15,
+       units = "cm",
+       dpi = 300)
 
 # SI Figure 2: Linear Regression & boxplot for EHW characteristics
 
