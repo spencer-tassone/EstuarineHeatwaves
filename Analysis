@@ -3680,6 +3680,11 @@ SlopeTable[49,5] <- round(summary(welin_temp_test)$r.squared,3)
 SlopeTable[50,5] <- round(summary(welin_do_test)$r.squared,3)
 SlopeTable[51,5] <- round(summary(welin_ph_test)$r.squared,3)
 
+SlopeTable %>%
+  group_by(Variable) %>%
+  summarise(MeanSlope = round(mean(Slope),2),
+            SDslope = round(sd(Slope),2))
+
 setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
 # write.csv(SlopeTable, "SlopeTable.csv")
 
