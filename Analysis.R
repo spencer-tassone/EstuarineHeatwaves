@@ -60,7 +60,6 @@ rm(all)
 dat <- dat[order(StationCode, DateTimeStamp)]
 dat$Depth <- as.numeric(dat$Depth)
 dat$pH <- as.numeric(dat$pH)
-rm(list=setdiff(ls(), "dat"))
 
 ####
 
@@ -3691,6 +3690,67 @@ SlopeTable %>%
 
 setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
 # write.csv(SlopeTable, "SlopeTable.csv")
+
+### width = 1000 height = 640
+
+all_daily_data %>%
+  ggplot(aes(x=obsTemp, y=noTide_corTemp)) +
+  geom_point(alpha = 1/15) +
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
+  geom_smooth(method = 'lm', se = F, color = "red") +
+  labs(y=expression(paste("Daily Avg. Water Temp. (°C) - Tide & Diurnal Removed")),
+       x=expression(paste("Daily Avg. Water Temp. (°C)"))) +
+  facet_wrap("Station") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        text = element_text(size = 14),
+        axis.text.x = element_text(size = 12, color = "black", angle = 45, vjust = 1, hjust = 1),
+        axis.text.y = element_text(size = 12, color = "black")) +
+  stat_regline_equation(
+    aes(label = paste(..eq.label.., sep = "~~~")),
+    label.x = -2, label.y = 30, size = 4) +
+  stat_cor(aes(label = paste(..rr.label.., sep = "~~~")),
+           label.x = -2, label.y = 24, size = 4)
+
+all_daily_data %>%
+  ggplot(aes(x=obsDO, y=noTide_corDO)) +
+  geom_point(alpha = 1/15) +
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
+  geom_smooth(method = 'lm', se = F, color = "red") +
+  labs(y=expression(paste("Daily Avg. DO (mg ", L^-1,") - Tide & Diurnal Removed")),
+       x=expression(paste("Daily Avg. DO (mg ", L^-1,")"))) +
+  facet_wrap("Station") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        text = element_text(size = 14),
+        axis.text.x = element_text(size = 12, color = "black", angle = 45, vjust = 1, hjust = 1),
+        axis.text.y = element_text(size = 12, color = "black")) +
+  stat_regline_equation(
+    aes(label = paste(..eq.label.., sep = "~~~")),
+    label.x = -2, label.y = 18, size = 4) +
+  stat_cor(aes(label = paste(..rr.label.., sep = "~~~")),
+           label.x = -2, label.y = 14, size = 4)
+
+all_daily_data %>%
+  ggplot(aes(x=obsPH, y=noTide_corPH)) +
+  geom_point(alpha = 1/15) +
+  geom_abline(slope = 1, intercept = 0, linetype = 'dashed') +
+  geom_smooth(method = 'lm', se = F, color = "red") +
+  labs(y=expression(paste("Daily Avg. pH - Tide & Diurnal Removed")),
+       x=expression(paste("Daily Avg. pH"))) +
+  scale_x_continuous(breaks = c(6,7,8)) +
+  scale_y_continuous(breaks = c(6,7,8)) +
+  facet_wrap("Station") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        text = element_text(size = 14),
+        axis.text.x = element_text(size = 12, color = "black", angle = 45, vjust = 1, hjust = 1),
+        axis.text.y = element_text(size = 12, color = "black")) +
+  stat_regline_equation(
+    aes(label = paste(..eq.label.., sep = "~~~")),
+    label.x = 5.75, label.y = 8.5, size = 4) +
+  stat_cor(aes(label = paste(..rr.label.., sep = "~~~")),
+           label.x = 5.75, label.y = 7.85, size = 4)
 
 rm(list=setdiff(ls(), c("acesp.hf","apaeb.hf","apaes.hf","cbvtc.hf",
                         "delbl.hf","delsl.hf","elkap.hf","elksm.hf",
