@@ -59,7 +59,7 @@ dat <- dat[order(StationCode, DateTimeStamp)]
 dat$Depth <- as.numeric(dat$Depth)
 dat$pH <- as.numeric(dat$pH)
 
-####
+#### Code below cleans each of the 17 stations datasets
 
 acesp.dirty <- dat %>% filter(StationCode == "acespwq")
 aa <- as.data.frame(table(acesp.dirty$F_Depth))
@@ -1113,7 +1113,7 @@ nocrc.hf <- nocrc.hf[-c(nocrc_remove_row)]
 pdbby.hf <- pdbby.hf[-c(pdbby_remove_row)]
 welin.hf <- welin.hf[-c(welin_remove_row)]
 
-#custom functions from Pat Wiberg | this analysis removes the influence of tidal variation from the observed values
+#custom functions from Pat Wiberg | this analysis removes the influence of tidal & diurnal variation from the observed values
 
 source('D:/School/NERRSdata/LowPassFilter/specclc.R')
 source('D:/School/NERRSdata/LowPassFilter/lpfilt.R')
@@ -3455,6 +3455,7 @@ round(max(GapTable$Max_pH_Gap),2)
 
 all_daily_data <- all_daily_data[,1:8]
 
+#linear fits between filtered and unfiltered daily averages
 acesp_temp_test <- lm(acesp.final$noTide_corTemp~acesp.final$obsTemp)
 acesp_do_test <- lm(acesp.final$noTide_corDO~acesp.final$obsDO)
 acesp_ph_test <- lm(acesp.final$noTide_corPH~acesp.final$obsPH)
@@ -3507,6 +3508,7 @@ welin_temp_test <- lm(welin.final$noTide_corTemp~welin.final$obsTemp)
 welin_do_test <- lm(welin.final$noTide_corDO~welin.final$obsDO)
 welin_ph_test <- lm(welin.final$noTide_corPH~welin.final$obsPH)
 
+#combine all linear fits from above into one table
 SlopeTable <- data.frame(matrix(ncol = 5, nrow = 51))
 x <- c("Station","Variable", "Slope", "SE", "R2")
 colnames(SlopeTable) <- x
@@ -3706,6 +3708,7 @@ SlopeTable %>%
 setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
 # write.csv(SlopeTable, "SlopeTable.csv")
 
+#SI Figure 1
 SI_Fig1_temp <- all_daily_data %>%
   ggplot(aes(x=obsTemp, y=noTide_corTemp)) +
   geom_point(alpha = 1/15) +
