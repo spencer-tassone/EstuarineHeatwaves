@@ -59,7 +59,7 @@ dat <- dat[order(StationCode, DateTimeStamp)]
 dat$Depth <- as.numeric(dat$Depth)
 dat$pH <- as.numeric(dat$pH)
 
-#### Code below cleans each of the 17 stations datasets
+####
 
 acesp.dirty <- dat %>% filter(StationCode == "acespwq")
 aa <- as.data.frame(table(acesp.dirty$F_Depth))
@@ -1113,7 +1113,7 @@ nocrc.hf <- nocrc.hf[-c(nocrc_remove_row)]
 pdbby.hf <- pdbby.hf[-c(pdbby_remove_row)]
 welin.hf <- welin.hf[-c(welin_remove_row)]
 
-#custom functions from Pat Wiberg | this analysis removes the influence of tidal & diurnal variation from the observed values
+#custom functions from Pat Wiberg | this analysis removes the influence of tidal variation from the observed values
 
 source('D:/School/NERRSdata/LowPassFilter/specclc.R')
 source('D:/School/NERRSdata/LowPassFilter/lpfilt.R')
@@ -1410,7 +1410,7 @@ nocrc_PH15 <- nocrc_dat15$pH
 pdbby_PH15 <- pdbby_dat15$pH
 welin_PH15 <- welin_dat15$pH
 
-#interpolate to fill gaps - define new temperature series
+#interpolate to fill gaps - define new temperature, DO, and pH series
 acesp_Wt30 = approx(acesp_time30,acesp_Wtemp30,acesp_time30)
 acesp_Wt15 = approx(acesp_time15,acesp_Wtemp15,acesp_time15)
 acesp_do30 = approx(acesp_time30,acesp_DO30,acesp_time30)
@@ -2049,7 +2049,15 @@ px_welin_15_do = welin_Spec_15_do[,1]; fx_welin_15_do = welin_Spec_15_do[,2]
 px_welin_30_ph = welin_Spec_30_ph[,1]; fx_welin_30_ph = welin_Spec_30_ph[,2]
 px_welin_15_ph = welin_Spec_15_ph[,1]; fx_welin_15_ph = welin_Spec_15_ph[,2]
 
-#low pass filter -- see lpfilt.R for details but this sets the data, the 1/24 sets a cycle (data is hourly- this sets each observation as 1/24th of a cycle -- for 15 min data this would be adjusted), and 0.5 sets the cut off for frequency. This frequency (0.5) filters out all variability occuring at frequencies less than 24 hours, 1 filters out variability occuring less than every 12 hours. So using 0.5 will be equivalent to a daily average, removing both tidal and diurnal variation. 1 will filter out only tidal variation, and will keep diurnal variation.
+#low pass filter -- see lpfilt.R for details but this sets the data,
+#the 1/96 sets a cycle (15 min data -- this sets each observation as
+#1/96th of a cycle -- for 30 min data this would be adjusted to 1/48),
+#and 0.5 sets the cut off for frequency. This frequency (0.5) filters
+#out all variability occuring at frequencies less than 24 hours, 1 filters
+#out variability occuring less than every 12 hours. So using 0.5 will be
+#equivalent to a daily average, removing both tidal and diurnal variation.
+#1 will filter out only tidal variation, and will keep diurnal variation.
+
 #remove tidal & diurnal
 acesp_Filt2_30_temp = lpfilt(acesp_WTdet_30,1/48,0.5)
 acesp_Filt2_15_temp = lpfilt(acesp_WTdet_15,1/96,0.5)
@@ -3435,9 +3443,9 @@ all_daily_data <- rbind(acesp.final,apaeb.final,apaes.final,cbvtc.final,
                   narpc.final,nocec.final,nocrc.final,pdbby.final,welin.final)
 
 # determine largest data gap size for temperature, DO, and pH
-temp_miss = rle(is.na(all_daily_data$obsTemp))
-do_miss = rle(is.na(all_daily_data$obsDO))
-ph_miss = rle(is.na(all_daily_data$obsPH))
+temp_miss = rle(is.na(all_daily_data$noTide_corTemp))
+do_miss = rle(is.na(all_daily_data$noTide_corDO))
+ph_miss = rle(is.na(all_daily_data$noTide_corPH))
 
 all_daily_data$temp_gap <- rep(temp_miss$values*temp_miss$lengths,temp_miss$lengths)
 all_daily_data$do_gap <- rep(do_miss$values*do_miss$lengths,do_miss$lengths)
@@ -3455,7 +3463,6 @@ round(max(GapTable$Max_pH_Gap),2)
 
 all_daily_data <- all_daily_data[,1:8]
 
-#linear fits between filtered and unfiltered daily averages
 acesp_temp_test <- lm(acesp.final$noTide_corTemp~acesp.final$obsTemp)
 acesp_do_test <- lm(acesp.final$noTide_corDO~acesp.final$obsDO)
 acesp_ph_test <- lm(acesp.final$noTide_corPH~acesp.final$obsPH)
@@ -3508,7 +3515,6 @@ welin_temp_test <- lm(welin.final$noTide_corTemp~welin.final$obsTemp)
 welin_do_test <- lm(welin.final$noTide_corDO~welin.final$obsDO)
 welin_ph_test <- lm(welin.final$noTide_corPH~welin.final$obsPH)
 
-#combine all linear fits from above into one table
 SlopeTable <- data.frame(matrix(ncol = 5, nrow = 51))
 x <- c("Station","Variable", "Slope", "SE", "R2")
 colnames(SlopeTable) <- x
@@ -3708,7 +3714,6 @@ SlopeTable %>%
 setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
 # write.csv(SlopeTable, "SlopeTable.csv")
 
-#SI Figure 1
 SI_Fig1_temp <- all_daily_data %>%
   ggplot(aes(x=obsTemp, y=noTide_corTemp)) +
   geom_point(alpha = 1/15) +
@@ -3942,69 +3947,6 @@ all_table <- all_table[,c(11,1:10)]
 
 ######
 
-# saveDat_obsTemp$class <- "Observed"
-# saveDat_obsDO$class <- "Observed"
-# saveDat_obsPH$class <- "Observed"
-# saveDat_noTide_corTemp$class <- "Tide Removed"
-# saveDat_noTide_corDO$class <- "Tide Removed"
-# saveDat_noTide_corPH$class <- "Tide Removed"
-# hw_dat <- rbind(saveDat_obsTemp,saveDat_noTide_corTemp)
-# do_dat <- rbind(saveDat_obsDO,saveDat_noTide_corDO)
-# ph_dat <- rbind(saveDat_obsPH,saveDat_noTide_corPH)
-# 
-# setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
-# cols <- c("Observed" = "#000000", "noTide" = "#ffffff")
-# 
-# ggplot(hw_dat, aes(x=duration, color=class, fill = class)) +
-#   geom_histogram(position = "dodge", color = "black") +
-#   labs(y = "Total Estuarine Heatwave Events", x = "Duration (days)") +
-#   scale_fill_manual(values = cols) +
-#   facet_wrap("Station") +
-#   theme_bw() +
-#   theme(panel.grid = element_blank(),
-#         text = element_text(size = 14),
-#         axis.text.x = element_text(size = 12, color = "black", angle = 45, vjust = 1, hjust = 1),
-#         axis.text.y = element_text(size = 12, color = "black"),
-#         legend.key.size = unit(0.8,"line"),
-#         legend.title = element_blank(),
-#         legend.direction = "vertical",
-#         legend.position = c(0.11,0.97),
-#         legend.background = element_blank())
-# 
-# ggplot(do_dat, aes(x=duration, color=class, fill = class)) +
-#   geom_histogram(position = "dodge", color = "black") +
-#   labs(y = "Total Low DO Events", x = "Duration (days)") +
-#   scale_fill_manual(values = cols) +
-#   facet_wrap("Station") +
-#   theme_bw() +
-#   theme(panel.grid = element_blank(),
-#         text = element_text(size = 14),
-#         axis.text.x = element_text(size = 12, color = "black", angle = 45, vjust = 1, hjust = 1),
-#         axis.text.y = element_text(size = 12, color = "black"),
-#         legend.key.size = unit(0.8,"line"),
-#         legend.title = element_blank(),
-#         legend.direction = "vertical",
-#         legend.position = c(0.11,0.97),
-#         legend.background = element_blank())
-# 
-# ggplot(ph_dat, aes(x=duration, color=class, fill = class)) +
-#   geom_histogram(position = "dodge", color = "black") +
-#   labs(y = "Total Low pH Events", x = "Duration (days)") +
-#   scale_fill_manual(values = cols) +
-#   facet_wrap("Station") +
-#   theme_bw() +
-#   theme(panel.grid = element_blank(),
-#         text = element_text(size = 14),
-#         axis.text.x = element_text(size = 12, color = "black", angle = 45, vjust = 1, hjust = 1),
-#         axis.text.y = element_text(size = 12, color = "black"),
-#         legend.key.size = unit(0.8,"line"),
-#         legend.title = element_blank(),
-#         legend.direction = "vertical",
-#         legend.position = c(0.11,0.97),
-#         legend.background = element_blank())
-
-######
-
 acesp.hf$Station <- "acesp"
 apaeb.hf$Station <- "apaeb"
 apaes.hf$Station <- "apaes"
@@ -4041,7 +3983,9 @@ rm(list=setdiff(ls(), c("acesp.hf","apaeb.hf","apaes.hf","cbvtc.hf",
                         "all_HFdat","saveDat_obsTemp","saveDat_obsDO","saveDat_obsPH",
                         "saveDat_noTide_corTemp","saveDat_noTide_corDO","saveDat_noTide_corPH",
                         "saveCat_obsTemp","saveCat_obsDO","saveCat_obsPH",
-                        "saveCat_noTide_corTemp","saveCat_noTide_corDO","saveCat_noTide_corPH")))
+                        "saveCat_noTide_corTemp","saveCat_noTide_corDO","saveCat_noTide_corPH",
+                        "de_Warm_obsTemp","de_Cold_obsDO","de_Cold_obsPH",
+                        "de_Warm_noTide_corTemp","de_Cold_noTide_corDO","de_Cold_noTide_corPH")))
 
 ### Table 1: Mean Salinity per Station
 
@@ -4067,40 +4011,40 @@ PH_DailyMin <- all_HFdat %>%
   summarise(MinPH = round(min(pH, na.rm = TRUE),1)) %>%
   mutate(MinPH = ifelse(is.infinite(MinPH), NA, MinPH))
 
-ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsTemp$Station,  saveDat_obsTemp$date_start, saveDat_obsTemp$date_end, USE.NAMES = TRUE)
-saveDat_obsTemp$MeanSalinity <- mapply(function(a, b)
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_noTide_corTemp$Station,  saveDat_noTide_corTemp$date_start, saveDat_noTide_corTemp$date_end, USE.NAMES = TRUE)
+saveDat_noTide_corTemp$MeanSalinity <- mapply(function(a, b)
   mean(SalDat_DailyAVG$MeanSal[SalDat_DailyAVG$Station == b][match(a, SalDat_DailyAVG$DateFormatted[SalDat_DailyAVG$Station == b])]), ranges, names(ranges))
-ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsDO$Station,  saveDat_obsDO$date_start, saveDat_obsDO$date_end, USE.NAMES = TRUE)
-saveDat_obsDO$MeanSalinity <- mapply(function(a, b)
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_noTide_corDO$Station,  saveDat_noTide_corDO$date_start, saveDat_noTide_corDO$date_end, USE.NAMES = TRUE)
+saveDat_noTide_corDO$MeanSalinity <- mapply(function(a, b)
   mean(SalDat_DailyAVG$MeanSal[SalDat_DailyAVG$Station == b][match(a, SalDat_DailyAVG$DateFormatted[SalDat_DailyAVG$Station == b])]), ranges, names(ranges))
-ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsPH$Station,  saveDat_obsPH$date_start, saveDat_obsPH$date_end, USE.NAMES = TRUE)
-saveDat_obsPH$MeanSalinity <- mapply(function(a, b)
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_noTide_corPH$Station,  saveDat_noTide_corPH$date_start, saveDat_noTide_corPH$date_end, USE.NAMES = TRUE)
+saveDat_noTide_corPH$MeanSalinity <- mapply(function(a, b)
   mean(SalDat_DailyAVG$MeanSal[SalDat_DailyAVG$Station == b][match(a, SalDat_DailyAVG$DateFormatted[SalDat_DailyAVG$Station == b])]), ranges, names(ranges))
 
-ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsTemp$Station,  saveDat_obsTemp$date_start, saveDat_obsTemp$date_end, USE.NAMES = TRUE)
-saveDat_obsTemp$MinDO <- mapply(function(a, b)
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_noTide_corTemp$Station,  saveDat_noTide_corTemp$date_start, saveDat_noTide_corTemp$date_end, USE.NAMES = TRUE)
+saveDat_noTide_corTemp$MinDO <- mapply(function(a, b)
   min(DO_DailyMin$MinDO[DO_DailyMin$Station == b][match(a, DO_DailyMin$DateFormatted[DO_DailyMin$Station == b])]), ranges, names(ranges))
-ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsDO$Station,  saveDat_obsDO$date_start, saveDat_obsDO$date_end, USE.NAMES = TRUE)
-saveDat_obsDO$MinDO <- mapply(function(a, b)
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_noTide_corDO$Station,  saveDat_noTide_corDO$date_start, saveDat_noTide_corDO$date_end, USE.NAMES = TRUE)
+saveDat_noTide_corDO$MinDO <- mapply(function(a, b)
   min(DO_DailyMin$MinDO[DO_DailyMin$Station == b][match(a, DO_DailyMin$DateFormatted[DO_DailyMin$Station == b])]), ranges, names(ranges))
-ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsPH$Station,  saveDat_obsPH$date_start, saveDat_obsPH$date_end, USE.NAMES = TRUE)
-saveDat_obsPH$MinDO <- mapply(function(a, b)
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_noTide_corPH$Station,  saveDat_noTide_corPH$date_start, saveDat_noTide_corPH$date_end, USE.NAMES = TRUE)
+saveDat_noTide_corPH$MinDO <- mapply(function(a, b)
   min(DO_DailyMin$MinDO[DO_DailyMin$Station == b][match(a, DO_DailyMin$DateFormatted[DO_DailyMin$Station == b])]), ranges, names(ranges))
 
-ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsTemp$Station,  saveDat_obsTemp$date_start, saveDat_obsTemp$date_end, USE.NAMES = TRUE)
-saveDat_obsTemp$MinPH <- mapply(function(a, b)
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_noTide_corTemp$Station,  saveDat_noTide_corTemp$date_start, saveDat_noTide_corTemp$date_end, USE.NAMES = TRUE)
+saveDat_noTide_corTemp$MinPH <- mapply(function(a, b)
   min(PH_DailyMin$MinPH[PH_DailyMin$Station == b][match(a, PH_DailyMin$DateFormatted[PH_DailyMin$Station == b])]), ranges, names(ranges))
-ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsDO$Station,  saveDat_obsDO$date_start, saveDat_obsDO$date_end, USE.NAMES = TRUE)
-saveDat_obsDO$MinPH <- mapply(function(a, b)
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_noTide_corDO$Station,  saveDat_noTide_corDO$date_start, saveDat_noTide_corDO$date_end, USE.NAMES = TRUE)
+saveDat_noTide_corDO$MinPH <- mapply(function(a, b)
   min(PH_DailyMin$MinPH[PH_DailyMin$Station == b][match(a, PH_DailyMin$DateFormatted[PH_DailyMin$Station == b])]), ranges, names(ranges))
-ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_obsPH$Station,  saveDat_obsPH$date_start, saveDat_obsPH$date_end, USE.NAMES = TRUE)
-saveDat_obsPH$MinPH <- mapply(function(a, b)
+ranges <- mapply(function(x, y, z)  seq.Date(y, z, 1), saveDat_noTide_corPH$Station,  saveDat_noTide_corPH$date_start, saveDat_noTide_corPH$date_end, USE.NAMES = TRUE)
+saveDat_noTide_corPH$MinPH <- mapply(function(a, b)
   min(PH_DailyMin$MinPH[PH_DailyMin$Station == b][match(a, PH_DailyMin$DateFormatted[PH_DailyMin$Station == b])]), ranges, names(ranges))
 
-frac_lowDO_hypoxic <- sum(saveDat_obsDO$MinDO <= 2.0, na.rm = TRUE)/NROW(saveDat_obsDO)
+frac_lowDO_hypoxic <- sum(saveDat_noTide_corDO$MinDO <= 2.0, na.rm = TRUE)/NROW(saveDat_noTide_corDO)
 round(frac_lowDO_hypoxic*100,1)
 
-frac_lowPH <- sum(saveDat_obsPH$MinPH < 7.0, na.rm = TRUE)/NROW(saveDat_obsPH)
+frac_lowPH <- sum(saveDat_noTide_corPH$MinPH < 7.0, na.rm = TRUE)/NROW(saveDat_noTide_corPH)
 round(frac_lowPH*100,1)
 
 ### Table 1: Mean Depth & Tidal Height per Station
@@ -4268,13 +4212,13 @@ colnames(Table1) <- c("Order","Station","Region","Salinity_mean","Salinity_SD",
                     "Total_LowPH","Total_LowPH(NoTide)","LowPH_Diff")
 
 # setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
-# write.csv(Table1, "Table1.csv")
+# write.csv(Table1, "Table1_rmTideDiurnal.csv")
 
 ### Replace mean salinity NA values with mean of station salinity
 
-MHW <- left_join(saveDat_obsTemp,SalDat, by = "Station")
-LDO <- left_join(saveDat_obsDO, SalDat, by = "Station")
-LPH <- left_join(saveDat_obsPH, SalDat, by = "Station")
+MHW <- left_join(saveDat_noTide_corTemp, SalDat, by = "Station")
+LDO <- left_join(saveDat_noTide_corDO, SalDat, by = "Station")
+LPH <- left_join(saveDat_noTide_corPH, SalDat, by = "Station")
 
 MHW <- MHW %>%
   group_by(Station) %>%
@@ -4455,7 +4399,7 @@ x5$Region <- "NE"
 region <- rbind(x1,x2,x3,x4,x5)
 mhw_region <- merge(mhw_region, region, by = c("Year","Region"), all = TRUE)
 mhw_region <- mhw_region[,c(1:6,9)]
-mhw_region[c(2:3,23,80,93),3:7] <- 0
+mhw_region[is.na(mhw_region)] <- 0
 mhw_time$Type <- "MHW"
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4475,12 +4419,28 @@ x4$Sal.class <- "Polyhaline"
 x5$Sal.class <- "Seawater"
 salinity <- rbind(x1,x2,x3,x4,x5)
 mhw_salinity <- merge(mhw_salinity, salinity, by = c("Year","Sal.class"), all = TRUE)
-mhw_salinity[c(27,40,42,70,87,95,120),3:7] <- 0
+mhw_salinity[is.na(mhw_salinity)] <- 0
 
-LDO_AnnualTable <- LDO %>%
-  group_by(Year) %>%
-  summarise(Nevents = n())
-View(LDO_AnnualTable)
+x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
+x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
+x3 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
+x4 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
+names(x1)[1] <- "Year"
+names(x2)[1] <- "Year"
+names(x3)[1] <- "Year"
+names(x4)[1] <- "Year"
+x1$Season <- "Winter"
+x2$Season <- "Spring"
+x3$Season <- "Summer"
+x4$Season <- "Fall"
+season <- rbind(x1,x2,x3,x4)
+mhw_season <- merge(mhw_season, season, by = c("Year","Season"), all = TRUE)
+mhw_season[is.na(mhw_season)] <- 0
+
+# LDO_AnnualTable <- LDO %>%
+#   group_by(Year) %>%
+#   summarise(Nevents = n())
+# View(LDO_AnnualTable)
 
 do_region <- LDO %>%
   group_by(Year, Region) %>%
@@ -4536,7 +4496,7 @@ x5$Region <- "NE"
 region <- rbind(x1,x2,x3,x4,x5)
 do_region <- merge(do_region, region, by = c("Year","Region"), all = TRUE)
 do_region <- do_region[,c(1:6,9)]
-do_region[c(1,76,94),3:7] <- 0
+do_region[is.na(do_region)] <- 0
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
 x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4555,7 +4515,24 @@ x4$Sal.class <- "Polyhaline"
 x5$Sal.class <- "Seawater"
 salinity <- rbind(x1,x2,x3,x4,x5)
 do_salinity <- merge(do_salinity, salinity, by = c("Year","Sal.class"), all = TRUE)
-do_salinity[c(22,62,77,117),3:7] <- 0
+do_salinity[is.na(do_salinity)] <- 0
+
+x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
+x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
+x3 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
+x4 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
+names(x1)[1] <- "Year"
+names(x2)[1] <- "Year"
+names(x3)[1] <- "Year"
+names(x4)[1] <- "Year"
+x1$Season <- "Winter"
+x2$Season <- "Spring"
+x3$Season <- "Summer"
+x4$Season <- "Fall"
+season <- rbind(x1,x2,x3,x4)
+do_season <- merge(do_season, season, by = c("Year","Season"), all = TRUE)
+do_season[is.na(do_season)] <- 0
+
 do_time$Type <- "lowDO"
 
 ph_region <- LPH %>%
@@ -4612,7 +4589,7 @@ x5$Region <- "NE"
 region <- rbind(x1,x2,x3,x4,x5)
 ph_region <- merge(ph_region, region, by = c("Year","Region"), all = TRUE)
 ph_region <- ph_region[,c(1:6,9)]
-ph_region[c(21,51,61,75:76,116),3:7] <- 0
+ph_region[is.na(ph_region)] <- 0
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
 x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4631,7 +4608,7 @@ x4$Sal.class <- "Polyhaline"
 x5$Sal.class <- "Seawater"
 salinity <- rbind(x1,x2,x3,x4,x5)
 ph_salinity <- merge(ph_salinity, salinity, by = c("Year","Sal.class"), all = TRUE)
-ph_salinity[c(22,62,91),3:7] <- 0
+ph_salinity[is.na(ph_salinity)] <- 0
 
 x1 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
 x2 <- as.data.frame(seq(from = 1996, to = 2019, by = 1))
@@ -4647,7 +4624,7 @@ x3$Season <- "Summer"
 x4$Season <- "Fall"
 season <- rbind(x1,x2,x3,x4)
 ph_season <- merge(ph_season, season, by = c("Year","Season"), all = TRUE)
-ph_season[85,3:7] <- 0
+ph_season[is.na(ph_season)] <- 0
 ph_time$Type <- "lowPH"
 
 mhw_time <- mhw_time[,c(1,7,2:6)]
@@ -4655,8 +4632,11 @@ do_time <- do_time[,c(1,7,2:6)]
 ph_time <- ph_time[,c(1,7,2:6)]
 
 rm(list=setdiff(ls(), c("SlopeTable","all_daily_data","all_HFdat","Table1",
-                        "saveDat_obsTemp","saveDat_obsDO","saveDat_obsPH",
+                        "saveDat_noTide_corTemp","saveDat_noTide_corDO","saveDat_noTide_corPH",
                         "saveCat_obsTemp","saveCat_obsDO","saveCat_obsPH",
+                        "saveCat_noTide_corTemp","saveCat_noTide_corDO","saveCat_noTide_corPH",
+                        "de_Warm_obsTemp","de_Cold_obsDO","de_Cold_obsPH",
+                        "de_Warm_noTide_corTemp","de_Cold_noTide_corDO","de_Cold_noTide_corPH",
                         "MHW","LDO","LPH",
                         "mhw_region","mhw_salinity","mhw_season","mhw_time",
                         "do_region","do_salinity","do_season","do_time",
@@ -6040,10 +6020,10 @@ for(i in 1:length(ee)){
 ### Atmospheric Heatwave Analysis
 
 setwd("~/School/Lab Work/Dissertation/Projects/MarineHeatwave/Meteorlogical")
+
 dat <- fread("AllStation_ATM_Temp_dirty.csv")
 
 # For sites that have switched locations, need to combine data
-
 grb1 <- dat[, c(1,40:41)]
 grb2 <- dat[, c(1,45:46)]
 grb1$ATemp <- grb1$GRBGBMET_ATemp
@@ -8644,6 +8624,7 @@ Fig4_table %>%
   ggplot(aes(x = Reserve, y = MeanLag)) +
   geom_col(aes(fill = Type), position = "dodge", color = "black") +
   scale_fill_manual(values = cols) +
+  scale_y_continuous(breaks = c(seq(0,9,1))) +
   geom_errorbar(aes(fill = Type, ymin = lower, ymax = upper), position = "dodge", width = 0.9, color = "black") +
   labs(y = "Average Lag Time (days)",
        x = "NERRS Reserves & Regions") +
@@ -8659,8 +8640,8 @@ Fig4_table %>%
         legend.position = c(0.28,0.95),
         legend.background = element_blank()) +
   coord_cartesian(clip = "off", ylim = c(0, NA)) +
-  annotate("text", x = c(2.5,5.5,8,10,11.5), y = -1.15, label = c("Northeast", "Mid. Atl.","Southeast","GoM","West"), size = 5) +
-  annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = -0.4, yend = -1.5)
+  annotate("text", x = c(2.5,5.5,8,10,11.5), y = -1.35, label = c("Northeast", "Mid. Atl.","Southeast","GoM","West"), size = 5) +
+  annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = -0.45, yend = -1.7)
 
 all_sites %>%
   summarise(lower = min(Avg.),
@@ -8786,6 +8767,7 @@ Fig5_table %>%
   ggplot(aes(x = site, y = Mean_Events)) +
   geom_col(aes(fill = Type), position = "dodge", color = "black") +
   scale_fill_manual(values = cols) +
+  scale_y_continuous(breaks = c(seq(0,90,10))) +
   geom_errorbar(aes(fill = Type, ymin = lower, ymax = upper), position = "dodge", width = 0.9, color = "black") +
   labs(y = "Total Number of Events ('02-'19)",
        x = "NERRS Reserves & Regions") +
@@ -8904,11 +8886,11 @@ ph_MKSS_results <- left_join(ph_MKSS_results,fdr_table, by = c("TestType","Rank"
 ph_MKSS_results$SigTest <- ifelse(ph_MKSS_results$p.val < ph_MKSS_results$FDR_0.1,"Sig","NS")
 View(ph_MKSS_results)
 
-mhw_MKSS_results_sig <- mhw_MKSS_results[c(1:2,6,51),]
+mhw_MKSS_results_sig <- mhw_MKSS_results[1,]
 mhw_MKSS_results_sig$Test <- "mhw"
-do_MKSS_results_sig <- do_MKSS_results[c(1:4,26,51:53),]
+do_MKSS_results_sig <- do_MKSS_results[c(1:9,51:56),]
 do_MKSS_results_sig$Test <- "lowDO"
-ph_MKSS_results_sig <- ph_MKSS_results[c(1,6:10,51:58),]
+ph_MKSS_results_sig <- ph_MKSS_results[c(1:3,6:12,26:32,51:61),]
 ph_MKSS_results_sig$Test <- "lowPH"
 
 sig_MKSS_results <- rbind(mhw_MKSS_results_sig,do_MKSS_results_sig,ph_MKSS_results_sig)
@@ -8975,24 +8957,24 @@ View(AHW_RegionTable)
 
 ahw_region <- AHW %>%
   group_by(Year, Region) %>%
-  summarise(Avg.Duration = mean(duration, na.rm = TRUE),
-            Avg.CuInt = mean(intensity_cumulative_relThresh, na.rm = TRUE),
-            Avg.Onset = mean(rate_onset, na.rm = TRUE),
-            Avg.Decline = mean(rate_decline, na.rm = TRUE),
+  summarise(Avg.Duration = mean(duration),
+            Avg.CuInt = mean(intensity_cumulative_relThresh),
+            Avg.Onset = mean(rate_onset),
+            Avg.Decline = mean(rate_decline),
             SumEvents = length(duration))
 ahw_season <- AHW %>%
   group_by(Year, Season) %>%
-  summarise(Avg.Duration = mean(duration, na.rm = TRUE),
-            Avg.CuInt = mean(intensity_cumulative_relThresh, na.rm = TRUE),
-            Avg.Onset = mean(rate_onset, na.rm = TRUE),
-            Avg.Decline = mean(rate_decline, na.rm = TRUE),
+  summarise(Avg.Duration = mean(duration),
+            Avg.CuInt = mean(intensity_cumulative_relThresh),
+            Avg.Onset = mean(rate_onset),
+            Avg.Decline = mean(rate_decline),
             Frequency = length(duration)/12)
 ahw_time <- AHW %>%
   group_by(Year) %>%
-  summarise(Avg.Duration = mean(duration, na.rm = TRUE),
-            Avg.CuInt = mean(intensity_cumulative_relThresh, na.rm = TRUE),
-            Avg.Onset = mean(rate_onset, na.rm = TRUE),
-            Avg.Decline = mean(rate_decline, na.rm = TRUE),
+  summarise(Avg.Duration = mean(duration),
+            Avg.CuInt = mean(intensity_cumulative_relThresh),
+            Avg.Onset = mean(rate_onset),
+            Avg.Decline = mean(rate_decline),
             Frequency = length(duration)/12)
 
 ahw_region$nStations[ahw_region$Region == 'NE'] <- 4
@@ -9020,7 +9002,7 @@ x5$Region <- "NE"
 region <- rbind(x1,x2,x3,x4,x5)
 ahw_region <- merge(ahw_region, region, by = c("Year","Region"), all = TRUE)
 ahw_region <- ahw_region[,c(1:6,9)]
-ahw_region[c(39,61),3:7] <- 0
+ahw_region[is.na(ahw_region)] <- 0
 
 ahw_time$Type <- "AHW"
 ahw_time <- ahw_time[,c(1,7,2:6)]
@@ -9404,17 +9386,17 @@ View(ahw_MKSS_results)
 
 sig_MKSS_results <- rbind(mhw_MKSS_results_sig,do_MKSS_results_sig,ph_MKSS_results_sig)
 setwd("D:/School/NERRSdata/Manuscript/Figures/Take2")
-# write.csv(sig_MKSS_results,'Table2.csv')
+write.csv(sig_MKSS_results,'Table2_noTideDiurnal.csv')
 
 ### Figure 6: Export all figures as width = 1000 height = 1300
 
-saveCat_obsTemp$Year <- year(saveCat_obsTemp$peak_date)
-saveCat_obsDO$Year <- year(saveCat_obsDO$peak_date)
-saveCat_obsPH$Year <- year(saveCat_obsPH$peak_date)
+saveCat_noTide_corTemp$Year <- year(saveCat_noTide_corTemp$peak_date)
+saveCat_noTide_corDO$Year <- year(saveCat_noTide_corDO$peak_date)
+saveCat_noTide_corPH$Year <- year(saveCat_noTide_corPH$peak_date)
 
-dat_temp <- saveCat_obsTemp %>% count(category, Year, sort = TRUE)
-dat_do <- saveCat_obsDO %>% count(category, Year, sort = TRUE)
-dat_ph <- saveCat_obsPH %>% count(category, Year, sort = TRUE)
+dat_temp <- saveCat_noTide_corTemp %>% count(category, Year, sort = TRUE)
+dat_do <- saveCat_noTide_corDO %>% count(category, Year, sort = TRUE)
+dat_ph <- saveCat_noTide_corPH %>% count(category, Year, sort = TRUE)
 
 fillout_year <- rep(seq(from = 1996, to = 2019, by = 1), 4)
 fillout_year <- sort(fillout_year)
@@ -9431,12 +9413,12 @@ do_fill$n[is.na(do_fill$n)] <- 0
 ph_fill <- merge(dat_ph, fillout, by = c("Year","category"), all = TRUE)
 ph_fill$n[is.na(ph_fill$n)] <- 0
 
-hw_sum_cat <- saveCat_obsTemp %>% group_by(Year, category) %>% summarise(TotalDuration = sum(duration))
-lowDO_sum_cat <- saveCat_obsDO %>% group_by(Year, category) %>% summarise(TotalDuration = sum(duration))
-lowPH_sum_cat <- saveCat_obsPH %>% group_by(Year, category) %>% summarise(TotalDuration = sum(duration))
-hw_sum <- saveCat_obsTemp %>% group_by(Year) %>% summarise(TotalDuration = sum(duration))
-lowDO_sum <- saveCat_obsDO %>% group_by(Year) %>% summarise(TotalDuration = sum(duration))
-lowPH_sum <- saveCat_obsPH %>% group_by(Year) %>% summarise(TotalDuration = sum(duration))
+hw_sum_cat <- saveCat_noTide_corTemp %>% group_by(Year, category) %>% summarise(TotalDuration = sum(duration))
+lowDO_sum_cat <- saveCat_noTide_corDO %>% group_by(Year, category) %>% summarise(TotalDuration = sum(duration))
+lowPH_sum_cat <- saveCat_noTide_corPH %>% group_by(Year, category) %>% summarise(TotalDuration = sum(duration))
+hw_sum <- saveCat_noTide_corTemp %>% group_by(Year) %>% summarise(TotalDuration = sum(duration))
+lowDO_sum <- saveCat_noTide_corDO %>% group_by(Year) %>% summarise(TotalDuration = sum(duration))
+lowPH_sum <- saveCat_noTide_corPH %>% group_by(Year) %>% summarise(TotalDuration = sum(duration))
 
 Fig6A <- ggplot(data = temp_fill) +
   geom_col(aes(x = as.numeric(Year), y = n,
@@ -9444,21 +9426,20 @@ Fig6A <- ggplot(data = temp_fill) +
            width = 1) +
   scale_fill_manual(values = c("#000000", "#777777","#C7C7C7","#FFFFFF")) +
   xlab("Year") +
-  scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
-  ylim(c(0,100)) +
+  scale_x_continuous(breaks = seq(1995, 2020, 5)) +
+  scale_y_continuous(breaks = seq(0,70,10)) +
   ylab("Number of Estuarine HW Events") +
-  annotate("text", x = 2019.5, y = 100, label = "(a", size = 6) +
+  annotate("text", x = 2019.5, y = 75, label = "(a", size = 6) +
   guides(fill=guide_legend(title="Category")) +
   theme_bw() +
   theme(panel.grid = element_blank(),
-        plot.margin = margin(5,5,5,-2.3,"pt"),
-        axis.title.y = element_text(vjust = -1),
         text = element_text(size = 16),
         axis.text.x = element_blank(),
         axis.title.x = element_blank(),
         axis.text.y = element_text(size = 16, color = "black"),
-        legend.position = c(0.20,0.78),
-        legend.title = element_text(face = "bold"),
+        legend.position = c(0.15,0.84),
+        legend.title = element_text(face = "bold", size = 14),
+        legend.text = element_text(size = 12),
         legend.background = element_blank())
 
 Fig6B <- ggplot(data = do_fill) +
@@ -9467,8 +9448,8 @@ Fig6B <- ggplot(data = do_fill) +
            width = 1) +
   scale_fill_manual(values = c("#000000", "#777777","#C7C7C7","#FFFFFF")) +
   xlab("Year") +
-  scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
-  ylim(c(0,70)) +
+  scale_x_continuous(breaks = seq(1995, 2020, 5)) +
+  scale_y_continuous(breaks = seq(0,70,10)) +
   ylab("Number of Low DO Events") +
   annotate("text", x = 2019.5, y = 70, label = "(b", size = 6) +
   guides(fill=guide_legend(title="Category")) +
@@ -9488,7 +9469,7 @@ Fig6C <- ggplot(data = ph_fill) +
   scale_fill_manual(values = c("#000000", "#777777","#C7C7C7","#FFFFFF")) +
   xlab("Year") +
   scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
-  ylim(c(0,75)) +
+  scale_y_continuous(breaks = seq(0,70,10)) +
   ylab("Number of Low pH Events") +
   annotate("text", x = 2019.5, y = 70, label = "(c", size = 6) +
   guides(fill=guide_legend(title="Category")) +
@@ -9507,13 +9488,14 @@ Fig6D <- ggplot(data = hw_sum, aes(x = Year, y = TotalDuration)) +
   geom_smooth(method = "lm", formula = y~x, color = "black", size = 0.5, se = TRUE) +
   geom_point(shape = 21, size = 2, color = "black", fill = "white", stroke = 1) +
   xlab("Year") +
-  scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
+  scale_x_continuous(breaks = seq(1995, 2020, 5)) +
+  scale_y_continuous(breaks = seq(0, 700, 100)) +
   ylab("Total Estuarine HW Days") +
-  annotate("text", x = 2000.5, y = 800, label = "y = 17.12x - 34051", size = 5) +
-  annotate("text", x = 1999.75, y = 720,
-           label = "paste(Adj.R ^ 2, \" = 0.35\")", parse = TRUE, size = 5) +
-  annotate("text", x = 1999.75, y = 640, label = "p-value = 0.001", size = 5) +
-  annotate("text", x = 2019.5, y = 800, label = "(d", size = 6) +
+  annotate("text", x = 2000.5, y = 690, label = "y = 5.18x - 10092", size = 5) +
+  annotate("text", x = 1999.75, y = 640,
+           label = "paste(Adj.R ^ 2, \" = 0.01\")", parse = TRUE, size = 5) +
+  annotate("text", x = 1999.75, y = 590, label = "p-value > 0.05", size = 5) +
+  annotate("text", x = 2019.5, y = 690, label = "(d", size = 6) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16),
@@ -9528,13 +9510,14 @@ Fig6E <- ggplot(data = lowDO_sum, aes(x = Year, y = TotalDuration)) +
   geom_smooth(method = "lm", formula = y~x, color = "black", size = 0.5, se = TRUE) +
   geom_point(shape = 21, size = 2, color = "black", fill = "white", stroke = 1) +
   xlab("Year") +
-  scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
+  scale_x_continuous(breaks = seq(1995, 2020, 5)) +
+  scale_y_continuous(breaks = seq(0, 600, 100)) +
   ylab("Total Low DO Days") +
-  annotate("text", x = 1999.99, y = 635, label = "y = -4.79x + 9939", size = 5) +
-  annotate("text", x = 2009.5, y = 635,
-           label = "paste(Adj.R ^ 2, \" = 0.04\")", parse = TRUE, size = 5) +
-  annotate("text", x = 1999.15, y = 585, label = "p-value > 0.05", size = 5) +
-  annotate("text", x = 2019.5, y = 635, label = "(e", size = 6) +
+  annotate("text", x = 2014, y = 590, label = "y = -11.94x + 24292", size = 5) +
+  annotate("text", x = 2013.5, y = 550,
+           label = "paste(Adj.R ^ 2, \" = 0.36\")", parse = TRUE, size = 5) +
+  annotate("text", x = 2013.5, y = 510, label = "p-value = 0.001", size = 5) +
+  annotate("text", x = 1995.5, y = 590, label = "(e", size = 6) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16),
@@ -9549,13 +9532,14 @@ Fig6F <- ggplot(data = lowPH_sum, aes(x = Year, y = TotalDuration)) +
   geom_smooth(method = "lm", formula = y~x, color = "black", size = 0.5, se = TRUE) +
   geom_point(shape = 21, size = 2, color = "black", fill = "white", stroke = 1) +
   xlab("Year") +
-  scale_x_continuous(breaks = seq(1995, 2020, by = 5)) +
+  scale_x_continuous(breaks = seq(1995, 2020, 5)) +
+  scale_y_continuous(breaks = seq(0, 1100, 250)) +
   ylab("Total Low pH Days") +
-  annotate("text", x = 2014, y = 1200, label = "y = -26.47x + 53576", size = 5) +
-  annotate("text", x = 2013.5, y = 1075,
+  annotate("text", x = 2014, y = 1050, label = "y = -24.93x + 50472", size = 5) +
+  annotate("text", x = 2013.5, y = 950,
            label = "paste(Adj.R ^ 2, \" = 0.45\")", parse = TRUE, size = 5) +
-  annotate("text", x = 2013.5, y = 950, label = "p-value < 0.001", size = 5) +
-  annotate("text", x = 1995.5, y = 1200, label = "f)", size = 6) +
+  annotate("text", x = 2013.5, y = 850, label = "p-value < 0.001", size = 5) +
+  annotate("text", x = 1995.5, y = 1050, label = "f)", size = 6) +
   theme_bw() +
   theme(plot.margin = margin(5,5,5,-2.2,"pt"),
         axis.title.y = element_text(vjust = -1),
@@ -9566,17 +9550,17 @@ Fig6F <- ggplot(data = lowPH_sum, aes(x = Year, y = TotalDuration)) +
 
 ggarrange(Fig6A,Fig6D,Fig6B,Fig6E,Fig6C,Fig6F, nrow = 3, ncol = 2)
 
-### SI Table 1: Station specific trends in low DO and low pH duration
+### SI Table 2: Station specific trends in low DO and low pH duration
 
-HW_AnnualSum_duration_station <- saveCat_obsTemp %>%
+HW_AnnualSum_duration_station <- saveCat_noTide_corTemp %>%
   group_by(Year, Station) %>%
   summarise_at(vars(duration), sum, na.rm = TRUE)
 
-LowDO_AnnualSum_duration_station <- saveCat_obsDO %>%
+LowDO_AnnualSum_duration_station <- saveCat_noTide_corDO %>%
   group_by(Year, Station) %>%
   summarise_at(vars(duration), sum, na.rm = TRUE)
 
-LowPH_AnnualSum_duration_station <- saveCat_obsPH %>%
+LowPH_AnnualSum_duration_station <- saveCat_noTide_corPH %>%
   group_by(Year, Station) %>%
   summarise_at(vars(duration), sum, na.rm = TRUE)
 
@@ -9836,13 +9820,15 @@ df_station_lowPH$lowPH_slope_SE <- round(df_station_lowPH$lowPH_slope_SE,2)
 df_station_lowPH$lowPH_slope_p.val <- round(df_station_lowPH$lowPH_slope_p.val, 3)
 df_station_lowPH <- df_station_lowPH[,c(4,1:3)]
 
-SI_Table1 <- left_join(df_station_HW, df_station_lowDO, by = "site")
-SI_Table1 <- left_join(SI_Table1, df_station_lowPH, by = "site")
+SI_Table2 <- left_join(df_station_HW, df_station_lowDO, by = "site")
+SI_Table2 <- left_join(SI_Table2, df_station_lowPH, by = "site")
 
-SI_Table1$Order <- c(11,13,14,8,6,7,16,17,2,3,4,12,5,9,10,15,1)
-SI_Table1 <- SI_Table1[,c(11,1:10)]
-View(SI_Table1)
-# write.csv(SI_Table1, 'SI_Table1.csv')
+SI_Table2$Order <- c(11,13,14,8,6,7,16,17,2,3,4,12,5,9,10,15,1)
+SI_Table2 <- SI_Table2[,c(11,1:10)]
+SI_Table2 <- SI_Table2 %>%
+  arrange(-desc(Order))
+View(SI_Table2)
+# write.csv(SI_Table2, 'SI_Table2.csv')
 
 ### SI Figure 2: width = 1500 height = 650
 
@@ -9973,8 +9959,8 @@ all_daily_data$Reserve <- substr(all_daily_data$Station,0,3)
 
 annual_Wtemp <- all_daily_data %>%
   group_by(Year, Station) %>%
-  summarise(MeanTemp = mean(obsTemp, na.rm = TRUE),
-            SD_Temp = sd(obsTemp, na.rm = TRUE))
+  summarise(MeanTemp = mean(noTide_corTemp, na.rm = TRUE),
+            SD_Temp = sd(noTide_corTemp, na.rm = TRUE))
 
 library(plyr)
 
@@ -10165,11 +10151,11 @@ SI_Fig2b <- SI_Fig2B %>%
   annotate("segment", x = c(4.5,6.5,9.5,10.5), xend = c(4.5,6.5,9.5,10.5), y = 0, yend = -0.18, color = "black")
 
 SI_Fig2 <- ggarrange(SI_Fig2a,SI_Fig2b, nrow = 1)
-ggsave("SI_Fig2.png",SI_Fig2,
-       width = 35,
-       height = 15,
-       units = "cm",
-       dpi = 300)
+# ggsave("SI_Fig2.png",SI_Fig2,
+#        width = 35,
+#        height = 15,
+#        units = "cm",
+#        dpi = 300)
 
 # SI Figure 3: Linear Regression & boxplot for EHW characteristics
 
@@ -10249,17 +10235,15 @@ g1 <- ggplot(data = mhw_table, aes(x = Depth, y = Avg.Duration)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean EHW Duration (days)',
        x = 'Mean Depth (m)') +
-  annotate("text", x = 2 , y = 9.9,
-           label = 'Slope = 0.41 ± 0.13',
-           size = 5, fontface = 1) +
-  ylim(5,11) +
+  scale_y_continuous(breaks = seq(6,12,1), limits = c(6,12)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
         axis.text.x = element_text(size = 16, color = "black"),
         axis.text.y = element_text(size = 16, color = 'black'),
-        legend.position = c(0.80,0.25),
+        legend.position = c(0.80,0.22),
         legend.text = element_text(size = 16),
+        legend.background = element_blank(),
         legend.key = element_blank()) +
   scale_shape_discrete(name = 'Habitat Type') +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -10270,7 +10254,7 @@ g2 <- ggplot(data = mhw_table, aes(x = Depth, y = Total_MHW_events)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Total EHW Events',
        x = 'Mean Depth (m)') +
-  ylim(40,80) +
+  scale_y_continuous(breaks = seq(35,75,10), limits = c(35,75)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10278,14 +10262,14 @@ g2 <- ggplot(data = mhw_table, aes(x = Depth, y = Total_MHW_events)) +
         axis.text.y = element_text(size = 16, color = 'black'),
         legend.position = 'none') +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 3, label.y = 77, size = 5)
+           label.x = 3, label.y = 72, size = 5)
 
 g3 <- ggplot(data = mhw_table, aes(x = Depth, y = Frequency)) +
   stat_smooth(method = 'lm', color = 'black') +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean EHW Frequency (events/year)',
        x = 'Mean Depth (m)') +
-  scale_y_continuous(breaks = seq(from=1.8,to=3.1,by=0.2)) +
+  scale_y_continuous(breaks = seq(1.4,2.8,0.2), limits = c(1.4,2.8)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10300,7 +10284,7 @@ gg1 <- ggplot(data = mhw_table, aes(x = TideRange, y = Avg.Duration)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean EHW Duration (days)',
        x = 'Mean Tidal Range (m)') +
-  ylim(5,11) +
+  scale_y_continuous(breaks = seq(6,12,1), limits = c(6,12)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10315,7 +10299,7 @@ gg2 <- ggplot(data = mhw_table, aes(x = TideRange, y = Total_MHW_events)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Total EHW Events',
        x = 'Mean Tidal Range (m)') +
-  ylim(40,80) +
+  scale_y_continuous(breaks = seq(35,75,10), limits = c(35,75)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10323,14 +10307,14 @@ gg2 <- ggplot(data = mhw_table, aes(x = TideRange, y = Total_MHW_events)) +
         axis.text.y = element_text(size = 16, color = 'black'),
         legend.position = 'none') +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 0.75, label.y = 77, size = 5)
+           label.x = 0.75, label.y = 72, size = 5)
 
 gg3 <- ggplot(data = mhw_table, aes(x = TideRange, y = Frequency)) +
   stat_smooth(method = 'lm', color = 'black') +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean EHW Frequency (events/year)',
        x = 'Mean Tidal Range (m)') +
-  scale_y_continuous(breaks = seq(from=1.8,to=3.1,by=0.2)) +
+  scale_y_continuous(breaks = seq(1.4,2.8,0.2), limits = c(1.4,2.8)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10347,7 +10331,7 @@ p1 <- ggplot(data = mhw_table, aes(x = Habitat, y = Avg.Duration)) +
   labs(x = 'Habitat Type',
        y = 'Mean EHW Duration (days)') +
   scale_x_discrete(labels = wrap_format(10)) +
-  ylim(5,11) +
+  scale_y_continuous(breaks = seq(6,12,1), limits = c(6,12)) +
   geom_text(x = 'Mangrove' , y = 10.5, label = 'n = 1', size = 5, color = 'black') +
   geom_text(x = 'Marsh' , y = 10.5, label = 'n = 9', size = 5, color = 'black') +
   geom_text(x = 'Open Water' , y = 10.5, label = 'n = 3', size = 5, color = 'black') +
@@ -10364,7 +10348,7 @@ p2 <- ggplot(data = mhw_table, aes(x = Habitat, y = Total_MHW_events)) +
   labs(x = 'Habitat Type',
        y = 'Total EHW Events') +
   scale_x_discrete(labels = wrap_format(10)) +
-  ylim(40,80) +
+  scale_y_continuous(breaks = seq(35,75,10), limits = c(35,75)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10375,7 +10359,7 @@ p3 <- ggplot(data = mhw_table, aes(x = Habitat, y = Frequency)) +
   geom_boxplot() +
   labs(x = 'Habitat Type',
        y = 'Mean EHW Frequency (events/year)') +
-  scale_y_continuous(breaks = seq(from=1.8,to=3.1,by=0.2)) +
+  scale_y_continuous(breaks = seq(1.4,2.8,0.2), limits = c(1.4,2.8)) +
   scale_x_discrete(labels = wrap_format(10)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
@@ -10457,7 +10441,10 @@ g1 <- ggplot(data = do_table, aes(x = Depth, y = Avg.Duration)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean low DO Duration (days)',
        x = 'Mean Depth (m)') +
-  coord_cartesian(ylim = c(7,13)) +
+  scale_y_continuous(breaks = seq(6,13,1), limits = c(6,13)) +
+  annotate("text", x = 2 , y = 11.9,
+           label = 'Slope = 0.49 ± 0.20',
+           size = 5, fontface = 1) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10476,7 +10463,7 @@ g2 <- ggplot(data = do_table, aes(x = Depth, y = Total_do_events)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Total low DO Events',
        x = 'Mean Depth (m)') +
-  ylim(25,65) +
+  scale_y_continuous(breaks = seq(25,65,10), limits = c(25,65)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10491,7 +10478,7 @@ g3 <- ggplot(data = do_table, aes(x = Depth, y = Frequency)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean low DO Frequency (events/year)',
        x = 'Mean Depth (m)') +
-  coord_cartesian(ylim = c(1.2,2.6)) +
+  scale_y_continuous(breaks = seq(1.0,2.8,0.2), limits = c(1.0,2.8)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10501,6 +10488,9 @@ g3 <- ggplot(data = do_table, aes(x = Depth, y = Frequency)) +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
            label.x = 3, label.y = 1.3, size = 5)
 
+model <- lm(Avg.Duration~Depth, data = do_table)
+summary(model)
+
 model <- lm(Avg.Duration~TideRange, data = do_table)
 summary(model)
 
@@ -10509,10 +10499,10 @@ gg1 <- ggplot(data = do_table, aes(x = TideRange, y = Avg.Duration)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean low DO Duration (days)',
        x = 'Mean Tidal Range (m)') +
-  annotate("text", x = 0.5 , y = 11.9,
-           label = 'Slope = 1.41 ± 0.50',
+  annotate("text", x = 0.65 , y = 11.9,
+           label = 'Slope = 1.68 ± 0.37',
            size = 5, fontface = 1) +
-  coord_cartesian(ylim = c(7,13)) +
+  scale_y_continuous(breaks = seq(6,13,1), limits = c(6,13)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10520,14 +10510,14 @@ gg1 <- ggplot(data = do_table, aes(x = TideRange, y = Avg.Duration)) +
         axis.text.y = element_text(size = 16, color = 'black'),
         legend.position = 'none') +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 0.15, label.y = 12.5, size = 5)
+           label.x = 0.2, label.y = 12.5, size = 5)
 
 gg2 <- ggplot(data = do_table, aes(x = TideRange, y = Total_do_events)) +
   stat_smooth(method = 'lm', color = 'black') +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Total low DO Events',
        x = 'Mean Tidal Range (m)') +
-  ylim(25,65) +
+  scale_y_continuous(breaks = seq(25,65,10), limits = c(25,65)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10542,7 +10532,7 @@ gg3 <- ggplot(data = do_table, aes(x = TideRange, y = Frequency)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean low DO Frequency (events/year)',
        x = 'Mean Tidal Range (m)') +
-  coord_cartesian(ylim = c(1.2,2.6)) +
+  scale_y_continuous(breaks = seq(1.0,2.8,0.2), limits = c(1.0,2.8)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10557,7 +10547,7 @@ p1 <- ggplot(data = do_table, aes(x = Habitat, y = Avg.Duration)) +
   labs(x = 'Habitat Type',
        y = 'Mean low DO Duration (days)') +
   scale_x_discrete(labels = wrap_format(10)) +
-  coord_cartesian(ylim = c(7,13)) +
+  scale_y_continuous(breaks = seq(6,13,1), limits = c(6,13)) +
   geom_text(x = 'Mangrove' , y = 13, label = 'n = 1', size = 5, color = 'black') +
   geom_text(x = 'Marsh' , y = 13, label = 'n = 9', size = 5, color = 'black') +
   geom_text(x = 'Open Water' , y = 13, label = 'n = 3', size = 5, color = 'black') +
@@ -10574,7 +10564,7 @@ p2 <- ggplot(data = do_table, aes(x = Habitat, y = Total_do_events)) +
   labs(x = 'Habitat Type',
        y = 'Total low DO Events') +
   scale_x_discrete(labels = wrap_format(10)) +
-  ylim(25,65) +
+  scale_y_continuous(breaks = seq(25,65,10), limits = c(25,65)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10585,7 +10575,7 @@ p3 <- ggplot(data = do_table, aes(x = Habitat, y = Frequency)) +
   geom_boxplot() +
   labs(x = 'Habitat Type',
        y = 'Mean low DO Frequency (events/year)') +
-  coord_cartesian(ylim = c(1.2,2.6)) +
+  scale_y_continuous(breaks = seq(1.0,2.8,0.2), limits = c(1.0,2.8)) +
   scale_x_discrete(labels = wrap_format(10)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
@@ -10667,7 +10657,7 @@ g1 <- ggplot(data = ph_table, aes(x = Depth, y = Avg.Duration)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean low pH Duration (days)',
        x = 'Mean Depth (m)') +
-  coord_cartesian(ylim = c(8.1,18.1)) +
+  scale_y_continuous(breaks = seq(8,18,2), limits = c(8,18)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10686,7 +10676,7 @@ g2 <- ggplot(data = ph_table, aes(x = Depth, y = Total_ph_events)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Total low pH Events',
        x = 'Mean Depth (m)') +
-  ylim(25,60) +
+  scale_y_continuous(breaks = seq(30,60,5), limits = c(30,60)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10694,14 +10684,14 @@ g2 <- ggplot(data = ph_table, aes(x = Depth, y = Total_ph_events)) +
         axis.text.y = element_text(size = 16, color = 'black'),
         legend.position = 'none') +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 3, label.y = 27, size = 5)
+           label.x = 3, label.y = 32, size = 5)
 
 g3 <- ggplot(data = ph_table, aes(x = Depth, y = Frequency)) +
   stat_smooth(method = 'lm', color = 'black') +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean low pH Frequency (events/year)',
        x = 'Mean Depth (m)') +
-  coord_cartesian(ylim = c(1.0,2.5)) +
+  scale_y_continuous(breaks = seq(1.2,2.6,0.2), limits = c(1.2,2.6)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10709,14 +10699,14 @@ g3 <- ggplot(data = ph_table, aes(x = Depth, y = Frequency)) +
         axis.text.y = element_text(size = 16, color = 'black'),
         legend.position = 'none') +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 3, label.y = 1.1, size = 5)
+           label.x = 3, label.y = 1.3, size = 5)
 
 gg1 <- ggplot(data = ph_table, aes(x = TideRange, y = Avg.Duration)) +
   stat_smooth(method = 'lm', color = 'black') +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean low pH Duration (days)',
        x = 'Mean Tidal Range (m)') +
-  coord_cartesian(ylim = c(8.1,18.1)) +
+  scale_y_continuous(breaks = seq(8,18,2), limits = c(8,18)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10731,7 +10721,7 @@ gg2 <- ggplot(data = ph_table, aes(x = TideRange, y = Total_ph_events)) +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Total low pH Events',
        x = 'Mean Tidal Range (m)') +
-  ylim(25,60) +
+  scale_y_continuous(breaks = seq(30,60,5), limits = c(30,60)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10739,14 +10729,14 @@ gg2 <- ggplot(data = ph_table, aes(x = TideRange, y = Total_ph_events)) +
         axis.text.y = element_text(size = 16, color = 'black'),
         legend.position = 'none') +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 0.75, label.y = 27, size = 5)
+           label.x = 0.75, label.y = 32, size = 5)
 
 gg3 <- ggplot(data = ph_table, aes(x = TideRange, y = Frequency)) +
   stat_smooth(method = 'lm', color = 'black') +
   geom_point(aes(shape = factor(Habitat)), size = 2.5) +
   labs(y = 'Mean low pH Frequency (events/year)',
        x = 'Mean Tidal Range (m)') +
-  coord_cartesian(ylim = c(1.0,2.5)) +
+  scale_y_continuous(breaks = seq(1.2,2.6,0.2), limits = c(1.2,2.6)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10754,14 +10744,14 @@ gg3 <- ggplot(data = ph_table, aes(x = TideRange, y = Frequency)) +
         axis.text.y = element_text(size = 16, color = 'black'),
         legend.position = 'none') +
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 0.75, label.y = 1.1, size = 5)
+           label.x = 0.75, label.y = 1.3, size = 5)
 
 p1 <- ggplot(data = ph_table, aes(x = Habitat, y = Avg.Duration)) +
   geom_boxplot() +
   labs(x = 'Habitat Type',
        y = 'Mean low pH Duration (days)') +
   scale_x_discrete(labels = wrap_format(10)) +
-  coord_cartesian(ylim = c(8.1,18.1)) +
+  scale_y_continuous(breaks = seq(8,18,2), limits = c(8,18)) +
   geom_text(x = 'Mangrove' , y = 18, label = 'n = 1', size = 5, color = 'black') +
   geom_text(x = 'Marsh' , y = 18, label = 'n = 9', size = 5, color = 'black') +
   geom_text(x = 'Open Water' , y = 18, label = 'n = 3', size = 5, color = 'black') +
@@ -10778,7 +10768,7 @@ p2 <- ggplot(data = ph_table, aes(x = Habitat, y = Total_ph_events)) +
   labs(x = 'Habitat Type',
        y = 'Total low pH Events') +
   scale_x_discrete(labels = wrap_format(10)) +
-  ylim(25,60) +
+  scale_y_continuous(breaks = seq(30,60,5), limits = c(30,60)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         text = element_text(size = 16, color = "black"),
@@ -10789,7 +10779,7 @@ p3 <- ggplot(data = ph_table, aes(x = Habitat, y = Frequency)) +
   geom_boxplot() +
   labs(x = 'Habitat Type',
        y = 'Mean low pH Frequency (events/year)') +
-  coord_cartesian(ylim = c(1.0,2.5)) +
+  scale_y_continuous(breaks = seq(1.2,2.6,0.2), limits = c(1.2,2.6)) +
   scale_x_discrete(labels = wrap_format(10)) +
   theme_bw() +
   theme(panel.grid = element_blank(),
@@ -10801,6 +10791,8 @@ p3 <- ggplot(data = ph_table, aes(x = Habitat, y = Frequency)) +
 ggarrange(g1,g2,g3,gg1,gg2,gg3,p1,p2,p3, nrow = 3, ncol = 3)
 
 ### Figure 2
+
+rm(list=setdiff(ls(), c("all_daily_data")))
 
 # Atmospheric Heatwave Analysis
 
@@ -10830,7 +10822,7 @@ names(hud_clean_dailyAVG)[3] <- "ATemp"
 hud_clean_dailyAVG$date <- as.Date(hud_clean_dailyAVG$date)
 zz <- unique(hud_clean_dailyAVG$site)
 for(i in 1:length(zz)){
-  curDat = all_ATM_dailyAVG[all_ATM_dailyAVG$site == zz[i],]
+  curDat = hud_clean_dailyAVG[hud_clean_dailyAVG$site == zz[i],]
   ts_Warm = ts2clm(curDat, x = date, y = ATemp,
                    climatologyPeriod = c(min(curDat$date), max(curDat$date)))
   ts_Cold = ts2clm(curDat, x = date, y = ATemp,
@@ -10864,71 +10856,71 @@ hudts <- all_daily_data[all_daily_data$Station == 'hudts',]
 zz <- unique(hudts$Station)
 for(i in 1:length(zz)){
   curDat = all_daily_data[all_daily_data$Station == zz[i],]
-  ts_Warm = ts2clm(curDat, x = date, y = obsTemp,
+  ts_Warm = ts2clm(curDat, x = date, y = noTide_corTemp,
                    climatologyPeriod = c(min(curDat$date), max(curDat$date)))
-  de_Warm_obsTemp = detect_event(ts_Warm, x = date, y = obsTemp )
-  cat_Warm = category(de_Warm_obsTemp, y = obsTemp, S = FALSE)
-  curEventsWarm = de_Warm_obsTemp$event
+  de_Warm_noTide_corTemp = detect_event(ts_Warm, x = date, y = noTide_corTemp, minDuration = 5, maxGap = 2)
+  cat_Warm = category(de_Warm_noTide_corTemp, y = noTide_corTemp, S = FALSE)
+  curEventsWarm = de_Warm_noTide_corTemp$event
   curEventsWarm$Station = zz[i]
   curCatWarm = cat_Warm
   curCatWarm$Station = zz[i]
   if( i == 1){
-    saveDat_obsTemp = curEventsWarm
-    saveCat_obsTemp = curCatWarm
+    saveDat_noTide_corTemp = curEventsWarm
+    saveCat_noTide_corTemp = curCatWarm
   } else{
-    saveDat_obsTemp = rbind(saveDat_obsTemp, curEventsWarm)
-    saveCat_obsTemp = rbind(saveCat_obsTemp, curCatWarm)
+    saveDat_noTide_corTemp = rbind(saveDat_noTide_corTemp, curEventsWarm)
+    saveCat_noTide_corTemp = rbind(saveCat_noTide_corTemp, curCatWarm)
   }
 }
 for(i in 1:length(zz)){
   curDat = all_daily_data[all_daily_data$Station == zz[i],]
-  ts_Cold = ts2clm(curDat, x = date, y = obsDO,
+  ts_Cold = ts2clm(curDat, x = date, y = noTide_corDO,
                    climatologyPeriod = c(min(curDat$date), max(curDat$date)), pctile = 10)
-  de_Cold_obsDO = detect_event(ts_Cold, x = date, y = obsDO, coldSpells = TRUE)
-  cat_Cold = category(de_Cold_obsDO, y = obsDO, S = FALSE)
-  curEventsCold = de_Cold_obsDO$event
+  de_Cold_noTide_corDO = detect_event(ts_Cold, x = date, y = noTide_corDO, coldSpells = TRUE, minDuration = 5, maxGap = 2)
+  cat_Cold = category(de_Cold_noTide_corDO, y = noTide_corDO, S = FALSE)
+  curEventsCold = de_Cold_noTide_corDO$event
   curEventsCold$Station = zz[i]
   curCatCold = cat_Cold
   curCatCold$Station = zz[i]
   if( i == 1){
-    saveDat_obsDO = curEventsCold
-    saveCat_obsDO = curCatCold
+    saveDat_noTide_corDO = curEventsCold
+    saveCat_noTide_corDO = curCatCold
   } else{
-    saveDat_obsDO = rbind(saveDat_obsDO, curEventsCold)
-    saveCat_obsDO = rbind(saveCat_obsDO, curCatCold)
+    saveDat_noTide_corDO = rbind(saveDat_noTide_corDO, curEventsCold)
+    saveCat_noTide_corDO = rbind(saveCat_noTide_corDO, curCatCold)
   }
 }
 for(i in 1:length(zz)){
   curDat = all_daily_data[all_daily_data$Station == zz[i],]
-  ts_Cold = ts2clm(curDat, x = date, y = obsPH,
+  ts_Cold = ts2clm(curDat, x = date, y = noTide_corPH,
                    climatologyPeriod = c(min(curDat$date), max(curDat$date)), pctile = 10)
-  de_Cold_obsPH = detect_event(ts_Cold, x = date, y = obsPH, coldSpells = TRUE)
-  cat_Cold = category(de_Cold_obsPH, y = obsPH, S = FALSE)
-  curEventsCold = de_Cold_obsPH$event
+  de_Cold_noTide_corPH = detect_event(ts_Cold, x = date, y = noTide_corPH, coldSpells = TRUE, minDuration = 5, maxGap = 2)
+  cat_Cold = category(de_Cold_noTide_corPH, y = noTide_corPH, S = FALSE)
+  curEventsCold = de_Cold_noTide_corPH$event
   curEventsCold$Station = zz[i]
   curCatCold = cat_Cold
   curCatCold$Station = zz[i]
   if( i == 1){
-    saveDat_obsPH = curEventsCold
-    saveCat_obsPH = curCatCold
+    saveDat_noTide_corPH = curEventsCold
+    saveCat_noTide_corPH = curCatCold
   } else{
-    saveDat_obsPH = rbind(saveDat_obsPH, curEventsCold)
-    saveCat_obsPH = rbind(saveCat_obsPH, curCatCold)
+    saveDat_noTide_corPH = rbind(saveDat_noTide_corPH, curEventsCold)
+    saveCat_noTide_corPH = rbind(saveCat_noTide_corPH, curCatCold)
   }
 }
 
 ahw <- de_Warm
-mhw <- de_Warm_obsTemp
-lowdo <- de_Cold_obsDO
-lowph <- de_Cold_obsPH
+mhw <- de_Warm_noTide_corTemp
+lowdo <- de_Cold_noTide_corDO
+lowph <- de_Cold_noTide_corPH
 
-ahw_clim <- ahw$climatology %>% slice(5327:5448)
+ahw_clim <- ahw$climatology %>% slice(3013:3118)
 ahw_event <- ahw$event
-mhw_clim <- mhw$climatology %>% slice(7519:7640)
+mhw_clim <- mhw$climatology %>% slice(5205:5310)
 mhw_event <- mhw$event
-lowdo_clim <- lowdo$climatology %>% slice(7519:7640)
+lowdo_clim <- lowdo$climatology %>% slice(5205:5310)
 lowdo_event <- lowdo$event
-lowph_clim <- lowph$climatology %>% slice(7519:7640)
+lowph_clim <- lowph$climatology %>% slice(5205:5310)
 lowph_event <- lowph$event
 names(ahw_clim)[names(ahw_clim) == "seas"] <- "Seasonal"
 names(ahw_clim)[names(ahw_clim) == "thresh"] <- "Threshold"
@@ -10940,7 +10932,7 @@ ahw_plot <- ggplot(data = ahw_clim, aes(x = date)) +
   geom_line(aes(y = Threshold, colour = "Threshold"), size = 0.8, linetype = "solid") +
   geom_line(aes(y = Seasonal, colour = "Seasonal"), size = 0.75, linetype = "dashed") +
   geom_line(aes(y = Temperature, colour = "Temperature"), size = 0.6, linetype = "solid") +
-  scale_y_continuous(limits = c(0,30)) +
+  scale_y_continuous(breaks = seq(5,32,5), limits = c(5,32)) +
   scale_colour_manual(name = "",
                       values = c("Temperature" = "black",
                                  "Threshold" =  "gray80",
@@ -10958,36 +10950,35 @@ ahw_plot <- ggplot(data = ahw_clim, aes(x = date)) +
         axis.text.y = element_text(size = 16, color = "black"),
         legend.position = "none",
         plot.margin = unit(c(0.2,0.9,0.2,0.2),"cm")) +
-  annotate("segment", x = as.Date("2016-10-24"), xend = as.Date("2016-11-02"),
-           y = 30, yend = 30, color = "black", size = 0.6) + 
-  annotate("text", x = as.Date("2016-11-19"), y = 30,
+  annotate("segment", x = as.Date("2010-06-12"), xend = as.Date("2010-06-20"),
+           y = 13.25, yend = 13.25, color = "black", size = 0.6) + 
+  annotate("text", x = as.Date("2010-07-06"), y = 13.5,
            label = "Obs. Data", size = 5) +
-  annotate("segment", x = as.Date("2016-10-24"), xend = as.Date("2016-11-02"),
-           y = 27, yend = 27, color = "black", size = 0.75, linetype = "dashed") + 
-  annotate("text", x = as.Date("2016-11-18"), y = 27.35,
+  annotate("segment", x = as.Date("2010-06-13"), xend = as.Date("2010-06-21"),
+           y = 10.75, yend = 10.75, color = "black", size = 0.75, linetype = "dashed") + 
+  annotate("text", x = as.Date("2010-07-05"), y = 11,
            label = "Seasonal", size = 5) +
-  annotate("segment", x = as.Date("2016-10-24"), xend = as.Date("2016-11-02"),
-           y = 24, yend = 24, color = "gray80", size = 0.8) + 
-  annotate("text", x = as.Date("2016-11-19"), y = 24.25,
+  annotate("segment", x = as.Date("2010-06-12"), xend = as.Date("2010-06-20"),
+           y = 8.25, yend = 8.25, color = "gray80", size = 0.8) + 
+  annotate("text", x = as.Date("2010-07-06"), y = 8.5,
            label = "Threshold", size = 5) +
-  annotate("rect", xmin = as.Date("2016-10-24"), xmax = as.Date("2016-11-02"),
-           ymin = 20, ymax = 22,
+  annotate("rect", xmin = as.Date("2010-06-12"), xmax = as.Date("2010-06-20"),
+           ymin = 5.2, ymax = 6.65,
            color = "black", fill = "grey30") +
-  annotate("text", x = as.Date("2016-11-14"), y = 21,
+  annotate("text", x = as.Date("2010-07-01"), y = 6,
            label = "Event", size = 5) +
-  annotate("text", x = as.Date("2016-08-05"), y = 30,
+  annotate("text", x = as.Date("2010-04-03"), y = 32,
            label = "a)", size = 6) +
-  annotate("rect", xmin = as.Date("2016-09-18"), xmax = as.Date("2016-09-20"),
-           ymin = 0, ymax = 30,
-           color = "black", fill = "black", alpha = 0.1)
+  annotate("rect", xmin = as.Date("2010-05-20"), xmax = as.Date("2010-05-24"),
+           ymin = 5, ymax = 32, fill = "black", alpha = 0.1, color = "black")
 
 mhw_plot <- ggplot(data = mhw_clim, aes(x = date)) +
-  geom_flame(aes(y = obsTemp, y2 = thresh, fill = "all"), show.legend = F) +
-  geom_flame(data = mhw_clim, aes(y = obsTemp, y2 = thresh, fill = "top"),  show.legend = F) +
+  geom_flame(aes(y = noTide_corTemp, y2 = thresh, fill = "all"), show.legend = F) +
+  geom_flame(data = mhw_clim, aes(y = noTide_corTemp, y2 = thresh, fill = "top"),  show.legend = F) +
   geom_line(aes(y = thresh, colour = "thresh"), size = 0.8, linetype = "solid") +
   geom_line(aes(y = seas, colour = "seas"), size = 0.75, linetype = "dashed") +
-  geom_line(aes(y = obsTemp, colour = "Temp"), size = 0.6, linetype = "solid") +
-  scale_y_continuous(limits = c(0,30)) +
+  geom_line(aes(y = noTide_corTemp, colour = "Temp"), size = 0.6, linetype = "solid") +
+  scale_y_continuous(breaks = seq(5,32,5), limits = c(5,32)) +
   scale_colour_manual(name = "",
                       values = c("Temp" = "black",
                                  "thresh" =  "gray80",
@@ -11005,19 +10996,18 @@ mhw_plot <- ggplot(data = mhw_clim, aes(x = date)) +
         axis.text.y = element_text(size = 16, color = "black"),
         legend.position = "none",
         plot.margin = unit(c(0.2,0.9,0.2,0.2),"cm")) +
-  annotate("text", x = as.Date("2016-08-05"), y = 30,
+  annotate("text", x = as.Date("2010-04-03"), y = 32,
            label = "b)", size = 6) +
-  annotate("rect", xmin = as.Date("2016-09-19"), xmax = as.Date("2016-09-23"),
-           ymin = 0, ymax = 30,
-           color = "black", fill = "black", alpha = 0.1)
+  annotate("rect", xmin = as.Date("2010-05-25"), xmax = as.Date("2010-06-07"),
+         ymin = 5, ymax = 32, fill = "black", alpha = 0.1, color = "black")
 
-do_plot <- ggplot(data = lowdo_clim, aes(x = date)) +
-  geom_flame(aes(y = thresh, y2 = obsDO, fill = "all"), show.legend = F) +
-  geom_flame(data = lowdo_clim, aes(y = thresh, y2 = obsDO, fill = "top"),  show.legend = F) +
+lowdo_plot <- ggplot(data = lowdo_clim, aes(x = date)) +
+  geom_flame(aes(y = thresh, y2 = noTide_corDO, fill = "all"), show.legend = F) +
+  geom_flame(data = lowdo_clim, aes(y = thresh, y2 = noTide_corDO, fill = "top"),  show.legend = F) +
   geom_line(aes(y = thresh, colour = "thresh"), size = 0.8, linetype = "solid") +
   geom_line(aes(y = seas, colour = "seas"), size = 0.75, linetype = "dashed") +
-  geom_line(aes(y = obsDO, colour = "DO_mgl"), size = 0.6, linetype = "solid") +
-  scale_y_continuous(limits = c(4,12)) +
+  geom_line(aes(y = noTide_corDO, colour = "DO_mgl"), size = 0.6, linetype = "solid") +
+  scale_y_continuous(breaks = seq(3,12,2), limits = c(3,12)) +
   scale_colour_manual(name = "",
                       values = c("DO_mgl" = "black",
                                  "thresh" =  "gray80",
@@ -11037,19 +11027,19 @@ do_plot <- ggplot(data = lowdo_clim, aes(x = date)) +
         axis.title.y = element_text(size = 16, color = "black"),
         legend.position = "none",
         plot.margin = unit(c(0.2,0.9,0.2,0.2),"cm")) +
-  annotate("text", x = as.Date("2016-08-05"), y = 12,
+  annotate("text", x = as.Date("2010-04-03"), y = 12,
            label = "c)", size = 6) +
-  annotate("rect", xmin = as.Date("2016-09-19"), xmax = as.Date("2016-09-24"),
-           ymin = 4, ymax = 12,
+  annotate("rect", xmin = as.Date("2010-05-31"), xmax = as.Date("2010-06-07"),
+           ymin = 3, ymax = 12,
            color = "black", fill = "black", alpha = 0.1)
 
-ph_plot <- ggplot(data = lowph_clim, aes(x = date)) +
-  geom_flame(aes(y = thresh, y2 = obsPH, fill = "all"), show.legend = F) +
-  geom_flame(data = lowph_clim, aes(y = thresh, y2 = obsPH, fill = "top"),  show.legend = F) +
+lowph_plot <- ggplot(data = lowph_clim, aes(x = date)) +
+  geom_flame(aes(y = thresh, y2 = noTide_corPH, fill = "all"), show.legend = F) +
+  geom_flame(data = lowph_clim, aes(y = thresh, y2 = noTide_corPH, fill = "top"),  show.legend = F) +
   geom_line(aes(y = thresh, colour = "thresh"), size = 0.8, linetype = "solid") +
   geom_line(aes(y = seas, colour = "seas"), size = 0.75, linetype = "dashed") +
-  geom_line(aes(y = obsPH, colour = "pH"), size = 0.6, linetype = "solid") +
-  scale_y_continuous(limits = c(7.1,7.9), n.breaks = 6) +
+  geom_line(aes(y = noTide_corPH, colour = "pH"), size = 0.6, linetype = "solid") +
+  scale_y_continuous(breaks = seq(7,8.4,0.2), limits = c(7,8.4)) +
   scale_colour_manual(name = "",
                       values = c("pH" = "black",
                                  "thresh" =  "gray80",
@@ -11069,16 +11059,16 @@ ph_plot <- ggplot(data = lowph_clim, aes(x = date)) +
         legend.position = "none",
         plot.margin = unit(c(0.2,0.9,0.2,0.2),"cm"),
         axis.title.y = element_text(margin = margin(t = 0, r = 8, b = 0, l = 0))) +
-  annotate("text", x = as.Date("2016-08-05"), y = 7.88,
+  annotate("text", x = as.Date("2010-04-03"), y = 8.4,
            label = "d)", size = 6) +
-  annotate("rect", xmin = as.Date("2016-09-19"),xmax = as.Date("2016-09-23"),
-           ymin = 7.1, ymax = 7.9,
+  annotate("rect", xmin = as.Date("2010-05-29"),xmax = as.Date("2010-06-07"),
+           ymin = 7, ymax = 8.4,
            color = "black", fill = "black", alpha = 0.1)
 
 gA <- ggplotGrob(ahw_plot)
 gB <- ggplotGrob(mhw_plot)
-gC <- ggplotGrob(do_plot)
-gD <- ggplotGrob(ph_plot)
+gC <- ggplotGrob(lowdo_plot)
+gD <- ggplotGrob(lowph_plot)
 
 gB$widths <- gA$widths
 gC$widths <- gA$widths
@@ -11091,4 +11081,4 @@ gD$lengths <- gA$lengths
 # Export figure as width = 1000, height = 700
 library(grid)
 grid.newpage()
-grid.arrange(gA, gB,gC, gD, ncol = 2)
+grid.arrange(gA, gB, gC, gD, ncol = 2)
