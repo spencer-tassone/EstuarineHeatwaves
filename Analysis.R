@@ -10969,7 +10969,7 @@ ahw_plot <- ggplot(data = ahw_clim, aes(x = date)) +
            label = "Event", size = 5) +
   annotate("text", x = as.Date("2010-04-03"), y = 32,
            label = "a)", size = 6) +
-  annotate("rect", xmin = as.Date("2010-05-20"), xmax = as.Date("2010-05-24"),
+  annotate("rect", xmin = as.Date("2010-05-25"), xmax = as.Date("2010-05-27"),
            ymin = 5, ymax = 32, fill = "black", alpha = 0.1, color = "black")
 
 mhw_plot <- ggplot(data = mhw_clim, aes(x = date)) +
@@ -11065,20 +11065,7 @@ lowph_plot <- ggplot(data = lowph_clim, aes(x = date)) +
            ymin = 7, ymax = 8.4,
            color = "black", fill = "black", alpha = 0.1)
 
-gA <- ggplotGrob(ahw_plot)
-gB <- ggplotGrob(mhw_plot)
-gC <- ggplotGrob(lowdo_plot)
-gD <- ggplotGrob(lowph_plot)
-
-gB$widths <- gA$widths
-gC$widths <- gA$widths
-gD$widths <- gA$widths
-
-gB$lengths <- gA$lengths
-gC$lengths <- gA$lengths
-gD$lengths <- gA$lengths
-
 # Export figure as width = 1000, height = 700
-library(grid)
-grid.newpage()
-grid.arrange(gA, gB, gC, gD, ncol = 2)
+library(patchwork)
+
+ahw_plot + mhw_plot + lowdo_plot + lowph_plot + plot_layout(ncol = 2)
