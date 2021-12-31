@@ -1,5 +1,5 @@
 # EstuarineHeatwaves
-Co-occurrence of aquatic heatwaves with atmospheric heatwaves, low dissolved oxygen, and low pH events in estuarine ecosystems. In Review @ Estuaries and Coasts.
+Co-occurrence of aquatic heatwaves with atmospheric heatwaves, low dissolved oxygen, and low pH events in estuarine ecosystems. [This work was published online, Sept. 2021, in Estuaries and Coasts](https://doi.org/10.1007/s12237-021-01009-x).
 
 Authors: Spencer J. Tassone*, Alice F. Besterman, Cal D. Buelo, Jonathan A. Walter, Michael L. Pace
 
